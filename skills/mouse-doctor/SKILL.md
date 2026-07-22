@@ -128,7 +128,7 @@ brew upgrade --cask linearmouse        # 更新（brew cask 管理）
   ~124MB（16GB の1%未満）で誤差。逼迫は**システム全体**（ブラウザ等）の話。
 - ❌ **LinearMouse 設定を dotfiles で探さない。** SoT は `~/.config/linearmouse/linearmouse.json`
   で **dotfiles 管理外**。
-- ❌ **dotfiles の `karabiner-apply` を疑わない。** これは `karabiner_cli --select-profile` の
+- ❌ **dotfiles の `just apply-karabiner` を疑わない。** これは `karabiner_cli --select-profile` の
   ソフト reload だけで、daemon 再起動も tap leak も起こせない。
 - ❌ **切り分け前に Karabiner の uninstall / 無効化を提案しない。** 本設定（hyper layer /
   F-key layer / tmux prefix / terminal 用 ⌘→⌃ 等）は代替困難。切る候補にするなら、latency の
