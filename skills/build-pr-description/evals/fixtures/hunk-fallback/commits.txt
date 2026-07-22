@@ -1,0 +1,1 @@
+fish: fall back to working tree review when branch has no ahead commits

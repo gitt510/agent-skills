@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub PR Reply Guard"
+  short_description: "GitHub PRレビュー返信先の誤りを防ぐ運用ガード"
+  default_prompt: "Use $github-pr-reply-guard to reply to the correct GitHub PR review comment thread with verification."

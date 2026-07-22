@@ -1,0 +1,38 @@
+{
+  "skill_name": "build-readme",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "web-hosting-readme-rebuild",
+      "prompt": "aws-iac repo の stack README を大幅に刷新したい。対象は stacks/web-hosting/README.md。読みやすく再構築し、要らない記述は削る。記載内容（数値・設定値・規約）は stack の実装（terraform / justfile / indexer / cli）と照合して正確に保つこと。",
+      "expected_output": "fact allowlist・fact からの section composition・1 fact 1 bullet に従った README。内部 how と弁明が落ち、実装と一致する fact だけが残る",
+      "files": ["stacks/web-hosting/README.md"],
+      "assertions": [
+        {
+          "name": "sections-follow-facts",
+          "text": "固定骨子を埋めず、allowlist を通った fact を読者の関心ごとにまとめた具体的な section だけが存在する"
+        },
+        {
+          "name": "no-paragraph-in-sections",
+          "text": "prose の paragraph は h1 直下の lead のみ。全 section の中身が bullet list / table / code block だけで構成されている"
+        },
+        {
+          "name": "cost-finds-fixed-waf-charge",
+          "text": "Cost section が WAF Web ACL（terraform/waf.tf の aws_wafv2_web_acl）による常時（固定）課金の存在を正しく述べている。『常時課金なし』と書いていたら fail"
+        },
+        {
+          "name": "no-internal-pipeline-narration",
+          "text": "内部 how（S3->SQS->Lambda の pipeline 記述、SQS batch window で束ねる仕組み、handler の自己トリガー抑止）が黒箱の観測可能な挙動（例: put/delete 後に catalog が自動更新される）に置き換わっているか削除されている。内部 pipeline の設定値（batch window・visibility timeout・maxReceiveCount 等）を config table / bullet として列挙している場合も fail"
+        },
+        {
+          "name": "load-bearing-facts-preserved",
+          "text": "読者が困る fact が失われていない: key 規約 SoT の JSON path / root index.html 手動 put 禁止 / shared/ namespace の扱い / 初回移行の順序（apply -> reindex -> deploy-index-ui）がすべて残っている"
+        },
+        {
+          "name": "facts-match-implementation",
+          "text": "spot-check: preview の default port が 4173（justfile と一致）、記載された just recipe 名がすべて justfile に実在する"
+        }
+      ]
+    }
+  ]
+}

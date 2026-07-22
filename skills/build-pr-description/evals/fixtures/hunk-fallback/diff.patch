@@ -1,0 +1,14 @@
+diff --git a/stow/fish/.config/fish/functions/_hunk_diff_target.fish b/stow/fish/.config/fish/functions/_hunk_diff_target.fish
+--- a/stow/fish/.config/fish/functions/_hunk_diff_target.fish
++++ b/stow/fish/.config/fish/functions/_hunk_diff_target.fish
+@@ -1,5 +1,9 @@
+-function _hunk_diff_target -d "Default hunk diff target: origin/<default>...HEAD"
++function _hunk_diff_target -d "Default hunk diff target: origin/<default>...HEAD, empty when HEAD has no ahead commits"
+     set -l base (git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | string replace 'origin/' '')
+     or set base main
++    # No commits ahead of branch root: emit no target so hunk reviews the
++    # working tree instead (untracked files included)
++    set -l ahead (git rev-list --count origin/$base..HEAD 2>/dev/null)
++    test "$ahead" = 0; and return
+     echo origin/$base...HEAD
+ end

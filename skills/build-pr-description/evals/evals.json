@@ -1,0 +1,92 @@
+{
+  "skill_name": "build-pr-description",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "hunk-fallback-build-body",
+      "prompt": "fish の hunk diff helper に fallback を入れた変更で PR を出す前に、description だけ先に作っておきたい。gh は使わないで、evals/fixtures/hunk-fallback/ にある diff.patch（変更内容）・commits.txt（commit message）・session-notes.md（作業時の会話メモ）を材料に PR description を組み立てて、作業ディレクトリ直下に body.md として保存して。",
+      "expected_output": "Why/What/Test/Notes の h2 骨子・1 fact 1 bullet に従った PR body。Why は会話メモ由来の客観事実、Test は実測つきの2検証、Notes に却下した代替案が理由つきで残る",
+      "files": [
+        "evals/fixtures/hunk-fallback/diff.patch",
+        "evals/fixtures/hunk-fallback/commits.txt",
+        "evals/fixtures/hunk-fallback/session-notes.md"
+      ],
+      "assertions": [
+        {
+          "name": "skeleton-h2-sections",
+          "text": "## Why / ## What / ## Test の3 section が h2 で存在する（h1 の section 見出しは無い）"
+        },
+        {
+          "name": "no-paragraph-in-sections",
+          "text": "全 section の中身が bullet list / table / code block だけで構成されている。Why も bullet で書かれ、地の文 paragraph が1つも無い"
+        },
+        {
+          "name": "why-is-objective-fact",
+          "text": "Why が「ahead 0 のとき hd が working tree / untracked の変更を表示しない」という現在形の客観事実を述べている。「〜したい」「〜できるようにする」型の意思表明で書かれていたら fail"
+        },
+        {
+          "name": "notes-keeps-rejected-alternative",
+          "text": "Notes に却下した代替案（各関数へ個別に fallback を書く案）が却下理由（3箇所に重複する）つきの bullet で残っている"
+        },
+        {
+          "name": "test-has-measured-results",
+          "text": "Test に ahead 0 と ahead 1 の2検証が、実行した確認内容と実測結果（空 / origin/main...HEAD）つきで載っている。「検証済み」だけの bullet なら fail"
+        },
+        {
+          "name": "no-how-prose",
+          "text": "実装の流れの解説（rev-list で数えて 0 なら return する、$target が空リストになる等の内部手順ナレーション）が What に無い。two-dot 採用理由は Notes の 1 bullet なら可"
+        },
+        {
+          "name": "no-session-leak",
+          "text": "会話文脈への言及（「会話で報告があった」「user が指摘した」「前述の」等）や自己弁護 tone が body に無い"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "eval_name": "hunk-fallback-rebuild-bloated-body",
+      "prompt": "evals/fixtures/hunk-fallback/current-body.md が今の PR description なんだけど、実装解説と余計な話で肥大してるので全面的に書き直したい。gh は使わず、同ディレクトリの diff.patch・commits.txt・session-notes.md（作業時の会話メモ）を根拠に rebuild して、作業ディレクトリ直下に rebuilt-body.md として保存して。",
+      "expected_output": "Why/What/Test/Notes の h2 骨子・1 fact 1 bullet に従った PR body。session leak・how 解説・無関係 issue・doc 再掲が落ち、検証は実測つきに具体化され、変更後の対外契約は保持される",
+      "files": [
+        "evals/fixtures/hunk-fallback/current-body.md",
+        "evals/fixtures/hunk-fallback/diff.patch",
+        "evals/fixtures/hunk-fallback/commits.txt",
+        "evals/fixtures/hunk-fallback/session-notes.md"
+      ],
+      "assertions": [
+        {
+          "name": "skeleton-h2-sections",
+          "text": "## Why / ## What / ## Test の3 section が h2 で存在し、元 body の h1 見出し・「概要」「実装の詳細」「その他」section が残っていない"
+        },
+        {
+          "name": "no-paragraph-in-sections",
+          "text": "全 section の中身が bullet list / table / code block だけで構成され、地の文 paragraph が1つも無い"
+        },
+        {
+          "name": "session-leak-removed",
+          "text": "「先日の会話で報告があった」「正直なところ」「〜したいと思います」等の会話文脈・自己弁護・意思表明の文が消えている"
+        },
+        {
+          "name": "how-prose-dropped",
+          "text": "実装手順のナレーション（symbolic-ref で取得し、rev-list で数え、0 なら return、$target が空リストになる…）が消えているか、観測可能な契約（ahead 0 のとき hd が untracked 込みの working tree review になる）に変換されている"
+        },
+        {
+          "name": "unrelated-issue-dropped",
+          "text": "#42（hunk の theme 管理 — この変更の動機と無関係）が Why や動機として残っていない。完全に落ちているのが理想"
+        },
+        {
+          "name": "doc-requote-dropped",
+          "text": "fish abbr の仕組みの解説（README 再掲: conf.d/abbr.fish で定義、hd → hunk_diff_all 展開）が消えている"
+        },
+        {
+          "name": "test-concretized",
+          "text": "Test が「実施しました」ではなく、session-notes 由来の具体的検証（ahead 0 → 空 / ahead 1 → origin/main...HEAD、確認コマンド）になっている"
+        },
+        {
+          "name": "load-bearing-contract-preserved",
+          "text": "変更後の対外契約（ahead 0 のとき working tree review に fallback し untracked が表示される、hd/hdc/hdt の3関数に効く）が What に残っている"
+        }
+      ]
+    }
+  ]
+}
