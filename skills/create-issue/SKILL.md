@@ -1,5 +1,5 @@
 ---
-name: issue-create
+name: create-issue
 description: >-
   Conventional Commits prefix + flat skeleton (Problem / Impact / Notes?) で
   GitHub issue を起票する (`gh issue create`)。create only — edit / close /
@@ -8,7 +8,7 @@ description: >-
   / "file an issue" / "gh issue create" と言われたときに使う。
 ---
 
-# Issue Create
+# Create Issue
 
 Goal: File a GitHub issue with a Conventional Commits prefixed title and a fixed
 English skeleton focused on **why** the work is worth doing. Follow-up sections
