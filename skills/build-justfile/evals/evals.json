@@ -1,0 +1,80 @@
+{
+  "skill_name": "build-justfile",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "new-node-justfile",
+      "prompt": "この pnpm モノレポの justfile を新規で作って。やりたいのは開発サーバ起動 (pnpm dev)、本番ビルド (pnpm build)、テスト実行 (pnpm test、追加フラグを渡せると嬉しい)、Drizzle の migration 適用 (pnpm db:migrate) と生成 (pnpm db:generate)、Cloudflare へのデプロイ (pnpm deploy)。",
+      "expected_output": "先頭に private _default (@just --list)、recipe 名は verb / verb-noun kebab (db-migrate 等)、test は小文字 *args で pass-through、各 recipe 直上に英語 1 行コメント。recipe 数的に group は任意。",
+      "files": [],
+      "assertions": [
+        {
+          "name": "private-default-lists",
+          "text": "先頭に `_default:` があり本文が `@just --list` (または --unsorted 付き) を呼ぶ。裸の just が何も実行しない"
+        },
+        {
+          "name": "verb-noun-kebab-names",
+          "text": "recipe 名が verb / verb-noun kebab-case。migration 系は db-migrate / db-generate のように prefix でまとまっている。CamelCase・snake_case・大文字だけの名前がない"
+        },
+        {
+          "name": "lowercase-args-passthrough",
+          "text": "test recipe が小文字 `*args` を取り `{{args}}` を下位コマンドへ渡す。大文字 `*ARGS` が 1 つもない"
+        },
+        {
+          "name": "english-doc-comments",
+          "text": "各 recipe 直上に英語 1 行の `#` doc-comment がある。日本語コメントや弁明的な複数行コメントがない"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "eval_name": "rebuild-real-bibles",
+      "prompt": "この justfile (gitt510/bibles の実物) を、挙動は一切変えずに著名 OSS の justfile 慣習に合わせて整えて。",
+      "expected_output": "実行内容 (op inject / pnpm db:* / pnpm dev / pnpm bible:add) を保ったまま、大文字 *ARGS を小文字 *args へ正規化。既に良い点 (_default で一覧・kebab 名・英語コメント・group) は壊さない。",
+      "files": ["skills/build-justfile/evals/fixtures/bibles.justfile"],
+      "assertions": [
+        {
+          "name": "behavior-preserved",
+          "text": "各 recipe が実行するコマンドが元と同じ (op inject -i .env.refs -o .env、pnpm db:migrate、pnpm db:generate、pnpm dev、pnpm bible:add)。実行内容を書き換えていない"
+        },
+        {
+          "name": "uppercase-args-downcased",
+          "text": "元の `bible-add *ARGS` の `*ARGS` が小文字 `*args` に直り、本文参照も `{{args}}` になっている。`*ARGS` / `{{ARGS}}` が 1 つも残っていない"
+        },
+        {
+          "name": "good-structure-kept",
+          "text": "既に de-facto に沿っている点を壊していない: 先頭で recipe 一覧が出る default、kebab-case 名 (db-migrate 等)、[group(...)] による整理が保持されている"
+        },
+        {
+          "name": "no-over-edit",
+          "text": "挙動に関係ない書き換え (recipe の追加・削除、コマンドの変更) をしていない。変更は命名・引数 casing・コメントなど presentation に限られている"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "rebuild-real-lexicon",
+      "prompt": "この justfile (gitt510/lexicon の実物) を、挙動は変えずに著名 OSS の慣習へ寄せて整えて。特にコメントを見直したい。",
+      "expected_output": "日本語コメントを英語 1 行 doc-comment へ。実行内容と group 構造・kebab 名・_default は保持。過剰な整形はしない。",
+      "files": ["skills/build-justfile/evals/fixtures/lexicon.justfile"],
+      "assertions": [
+        {
+          "name": "comments-to-english",
+          "text": "recipe 直上のコメントがすべて英語の 1 行 doc-comment になっている。元にあった日本語コメント (例:『schema 練り直し用』『予約コマンドなので script は run 経由』『Touch ID 1 回』) が英語化 or 除去されており、日本語 doc-comment が残っていない"
+        },
+        {
+          "name": "behavior-preserved",
+          "text": "各 recipe の実行コマンド (op inject / pnpm dev / pnpm db:* / pnpm --filter ... / wrangler 系 deploy) が元と一致。実行内容を書き換えていない"
+        },
+        {
+          "name": "structure-preserved",
+          "text": "先頭の default (一覧表示)、kebab-case 名 (db-migrate / deploy-api 等)、[group(...)] の区分が保持されている"
+        },
+        {
+          "name": "no-over-edit",
+          "text": "コメント英語化と軽微な整形の範囲を超えて recipe を足したり消したり実行内容を変えたりしていない"
+        }
+      ]
+    }
+  ]
+}
