@@ -23,3 +23,8 @@ list target="":
 [group('Development')]
 test:
     @bun test
+
+# Regenerate CHANGELOG.md from Conventional Commit history
+[group('Development')]
+changelog:
+    @bunx git-cliff -o CHANGELOG.md
