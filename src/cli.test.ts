@@ -187,6 +187,37 @@ describe("agent-skills CLI", () => {
     expect(list.stdout).not.toContain("Codex");
   });
 
+  test("treats an installed manifest-less source as INCOMPLETE, not EXTERNAL", async () => {
+    const home = await createHome();
+    const fixture = path.join(root, "skills", "zz-incomplete-fixture");
+    await mkdir(fixture, { recursive: true });
+    try {
+      // distribute skips the manifest-less dir, so it stays a benign work-in-progress
+      expect(run("distribute", home, "claude").exitCode).toBe(0);
+      const healthy = run("doctor", home, "claude");
+      expect(healthy.exitCode).toBe(0);
+      expect(healthy.stdout).toContain("HEALTHY");
+      expect(await lstat(path.join(home, ".claude", "skills", "zz-incomplete-fixture")).catch(() => undefined)).toBeUndefined();
+
+      // once a symlink to it is installed, it is our skill but invalid → INCOMPLETE
+      await symlink(fixture, path.join(home, ".claude", "skills", "zz-incomplete-fixture"));
+      const doctor = run("doctor", home, "claude");
+      expect(doctor.exitCode).toBe(1);
+      expect(doctor.stdout).toContain("INCOMPLETE");
+      expect(doctor.stdout).toContain("zz-incomplete-fixture");
+
+      const list = run("list", home, "claude");
+      expect(list.stdout).toContain("zz-incomplete-fixture");
+      expect(list.stdout).toContain("INCOMPLETE");
+
+      // distribute leaves the installed link untouched — deletion is a human call
+      expect(run("distribute", home, "claude").exitCode).toBe(0);
+      expect(await lstat(path.join(home, ".claude", "skills", "zz-incomplete-fixture")).catch(() => undefined)).toBeDefined();
+    } finally {
+      await rm(fixture, { recursive: true, force: true });
+    }
+  });
+
   test("rejects unknown targets", async () => {
     const home = await createHome();
     const result = run("list", home, "unknown");

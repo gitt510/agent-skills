@@ -24,7 +24,7 @@ bun run --silent agent-skills <doctor|list|distribute> [agents|claude|codex]
 
 | Command | Behavior |
 | --- | --- |
-| `doctor` | Reports target health and exits non-zero while a repository skill is missing or a dangling symlink remains |
+| `doctor` | Reports target health and exits non-zero while a repository skill is missing, a dangling symlink remains, or an installed skill has no `SKILL.md` |
 | `list` | Lists repository and external skills with their status and symlink target |
 | `distribute` | Reconciles repository skills after checking every selected target for real-file and real-directory conflicts |
 
@@ -40,16 +40,18 @@ just distribute claude
 - `distribute` replaces symlinks with repository skill names when they point somewhere else
 - `distribute` deletes every dangling symlink in the selected skills directories, including symlinks not created by this repository
 - `distribute` leaves valid external skills with other names unchanged
+- `distribute` never links a repository directory that has no `SKILL.md`, and leaves any such link already in place untouched
 - `distribute` makes no changes when a repository skill destination is occupied by a real file or directory
 
 ## Statuses
 
 | Status | Meaning |
 | --- | --- |
-| `MANAGED` | The destination resolves to this repository's skill |
+| `MANAGED` | The destination resolves to this repository's skill and that skill has a `SKILL.md` |
+| `INCOMPLETE` | The name belongs to this repository but its directory has no `SKILL.md`; counted only once a symlink to it is installed |
 | `MISSING` | This repository contains the skill but the expected destination does not resolve to it |
 | `STALE` | The destination is a symlink whose target does not exist |
-| `EXTERNAL` | The destination is a valid entry outside this repository's management |
+| `EXTERNAL` | The destination is a valid entry whose name this repository does not own |
 
 ## Repository layout
 

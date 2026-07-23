@@ -17,6 +17,7 @@ type Target = {
 type Skill = {
   name: string;
   source: string;
+  hasManifest: boolean;
 };
 
 type Destination = {
@@ -73,6 +74,7 @@ const paint = {
   green: (text: string) => colorEnabled ? `\u001b[32m${text}\u001b[39m` : text,
   yellow: (text: string) => colorEnabled ? `\u001b[33m${text}\u001b[39m` : text,
   cyan: (text: string) => colorEnabled ? `\u001b[36m${text}\u001b[39m` : text,
+  magenta: (text: string) => colorEnabled ? `\u001b[35m${text}\u001b[39m` : text,
 };
 
 async function lstatOrUndefined(filePath: string) {
@@ -99,10 +101,12 @@ async function collectSkills(): Promise<Skill[]> {
   const skills: Skill[] = [];
 
   for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
-    if (!entry.isDirectory()) continue;
+    // A skill is a directory; whether it is a valid, loadable skill (has a
+    // SKILL.md manifest) is a separate axis carried on hasManifest, not a filter.
+    if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
     const source = path.join(sourceDirectory, entry.name);
-    if (!(await lstatOrUndefined(path.join(source, "SKILL.md")))) continue;
-    skills.push({ name: entry.name, source });
+    const hasManifest = Boolean(await lstatOrUndefined(path.join(source, "SKILL.md")));
+    skills.push({ name: entry.name, source, hasManifest });
   }
 
   if (skills.length === 0) throw new Error(`No skills found in ${sourceDirectory}`);
@@ -207,9 +211,44 @@ async function inventory(selectedTargets: Target[]): Promise<Inventory> {
   };
 }
 
-function countStatuses(target: TargetInventory): Record<Status, number> {
-  const counts: Record<Status, number> = { ok: 0, missing: 0 };
-  for (const destination of target.destinations) counts[destination.status] += 1;
+type DisplayStatus = "MANAGED" | "INCOMPLETE" | "MISSING" | "MISSING/STALE";
+
+// Two independent axes decide a destination's label:
+//   provenance/link (Destination.status) — is our symlink correctly in place?
+//   validity (Skill.hasManifest)         — does the source hold a SKILL.md?
+// A source that is ours but lacks a manifest is INCOMPLETE, never EXTERNAL.
+function destinationStatus(destination: Destination, staleNames: Set<string>): DisplayStatus {
+  if (!destination.skill.hasManifest) return "INCOMPLETE";
+  if (destination.status === "ok") return "MANAGED";
+  return staleNames.has(destination.skill.name) ? "MISSING/STALE" : "MISSING";
+}
+
+type TargetCounts = {
+  managed: number;
+  incomplete: number;
+  missing: number;
+  stale: number;
+  external: number;
+};
+
+function summarize(target: TargetInventory): TargetCounts {
+  const staleNames = new Set(target.stale.map((entry) => entry.name));
+  const counts: TargetCounts = {
+    managed: 0,
+    incomplete: 0,
+    missing: 0,
+    stale: target.stale.length,
+    external: target.external.length,
+  };
+  for (const destination of target.destinations) {
+    const status = destinationStatus(destination, staleNames);
+    if (status === "MANAGED") counts.managed += 1;
+    else if (status === "INCOMPLETE") {
+      // Only a symlink actually installed against a manifest-less source is a
+      // defect; a manifest-less repo dir never linked is a benign work-in-progress.
+      if (destination.status === "ok") counts.incomplete += 1;
+    } else counts.missing += 1;
+  }
   return counts;
 }
 
@@ -301,6 +340,7 @@ function renderTable(
 
 function statusColor(status: string, text: string): string {
   if (status === "MANAGED") return paint.green(text);
+  if (status === "INCOMPLETE") return paint.magenta(text);
   if (status === "MISSING") return paint.yellow(text);
   if (status.includes("STALE")) return paint.red(text);
   if (status === "EXTERNAL") return paint.cyan(text);
@@ -314,55 +354,54 @@ function renderDoctor(current: Inventory): void {
   console.log();
 
   const summaryRows = current.targets.map((target) => {
-    const counts = countStatuses(target);
+    const counts = summarize(target);
     return [
       target.target.label,
-      String(counts.ok),
+      String(counts.managed),
+      String(counts.incomplete),
       String(counts.missing),
-      String(target.stale.length),
-      String(target.external.length),
+      String(counts.stale),
+      String(counts.external),
     ];
   });
   console.log(renderTable(
-    ["Target", "Managed", "Missing", "Stale", "External"],
+    ["Target", "Managed", "Incomplete", "Missing", "Stale", "External"],
     summaryRows,
     undefined,
     (cell, _raw, _rowIndex, columnIndex) => {
       if (columnIndex === 1) return paint.green(cell);
-      if (columnIndex === 2) return paint.yellow(cell);
-      if (columnIndex === 3) return paint.red(cell);
-      if (columnIndex === 4) return paint.cyan(cell);
+      if (columnIndex === 2) return paint.magenta(cell);
+      if (columnIndex === 3) return paint.yellow(cell);
+      if (columnIndex === 4) return paint.red(cell);
+      if (columnIndex === 5) return paint.cyan(cell);
       return cell;
     },
   ));
 
-  const details = current.targets.flatMap((target) => [
-    ...(target.invalid
-      ? [["MISSING", target.target.label, "target directory", target.invalid]]
-      : target.destinations
-          .filter(
-            (destination) =>
-              destination.status === "missing" &&
-              destination.kind !== "missing" &&
-              !target.stale.some((entry) => entry.name === destination.skill.name),
-          )
-          .map((destination) => [
-            "MISSING",
-            target.target.label,
-            destination.skill.name,
-            displayLinkTarget(destination),
-          ])),
-    ...target.stale.map((entry) => [
-      "STALE",
-      target.target.label,
-      entry.name,
-      displayInstalledTarget(entry),
-    ]),
-  ]);
+  const details = current.targets.flatMap((target) => {
+    if (target.invalid) {
+      return [["MISSING", target.target.label, "target directory", target.invalid]];
+    }
+    const staleNames = new Set(target.stale.map((entry) => entry.name));
+    const rows: string[][] = [];
+    for (const destination of target.destinations) {
+      if (destination.kind === "missing") continue;
+      const status = destinationStatus(destination, staleNames);
+      if (status === "MISSING") {
+        rows.push(["MISSING", target.target.label, destination.skill.name, displayLinkTarget(destination)]);
+      } else if (status === "INCOMPLETE" && destination.status === "ok") {
+        rows.push(["INCOMPLETE", target.target.label, destination.skill.name, displayLinkTarget(destination)]);
+      }
+    }
+    for (const entry of target.stale) {
+      rows.push(["STALE", target.target.label, entry.name, displayInstalledTarget(entry)]);
+    }
+    return rows;
+  });
 
   if (details.length > 0) {
     const width = terminalWidth();
-    const statusWidth = 8;
+    const statusWidth = 10;
     const targetWidth = 11;
     const skillWidth = Math.min(25, Math.max(19, Math.floor(width * 0.26)));
     const currentWidth = Math.max(21, width - statusWidth - targetWidth - skillWidth - 13);
@@ -379,18 +418,25 @@ function renderDoctor(current: Inventory): void {
 
   const totals = current.targets.reduce(
     (sum, target) => {
-      const counts = countStatuses(target);
+      const counts = summarize(target);
       sum.missing += counts.missing;
-      sum.stale += target.stale.length;
+      sum.stale += counts.stale;
+      sum.incomplete += counts.incomplete;
       return sum;
     },
-    { missing: 0, stale: 0 },
+    { missing: 0, stale: 0, incomplete: 0 },
   );
 
   console.log();
   if (totals.missing > 0 || totals.stale > 0) {
     console.log(`${paint.yellow(paint.bold("NEEDS DISTRIBUTION"))}  run ${paint.cyan("just distribute")}`);
-  } else {
+  }
+  if (totals.incomplete > 0) {
+    console.log(
+      `${paint.magenta(paint.bold("INCOMPLETE"))}  ${totals.incomplete} installed skill(s) missing SKILL.md — add a manifest or remove`,
+    );
+  }
+  if (totals.missing === 0 && totals.stale === 0 && totals.incomplete === 0) {
     console.log(paint.green(paint.bold("HEALTHY")));
   }
 }
@@ -410,9 +456,7 @@ function renderList(current: Inventory): void {
     const rows = [
       ...target.destinations.map((destination) => [
         destination.skill.name,
-        destination.status === "missing" && staleNames.has(destination.skill.name)
-          ? "MISSING/STALE"
-          : destination.status === "ok" ? "MANAGED" : "MISSING",
+        destinationStatus(destination, staleNames),
         displayLinkTarget(destination),
       ]),
       ...target.external.map((entry) => [
@@ -472,6 +516,9 @@ async function applyDistribution(current: Inventory): Promise<DistributionResult
     }
 
     for (const destination of target.destinations) {
+      // A manifest-less dir is not a loadable skill; never link it, and leave
+      // any pre-existing link untouched so a human decides its fate.
+      if (!destination.skill.hasManifest) continue;
       if (destination.status === "ok") {
         unchanged += 1;
       } else if (destination.kind === "symlink" && !stale.has(destination.skill.name)) {
@@ -545,8 +592,8 @@ async function main(): Promise<void> {
   if (command === "doctor") {
     renderDoctor(current);
     const unhealthy = current.targets.some((target) => {
-      const counts = countStatuses(target);
-      return counts.missing > 0 || target.stale.length > 0;
+      const counts = summarize(target);
+      return counts.missing > 0 || counts.stale > 0 || counts.incomplete > 0;
     });
     if (unhealthy) process.exitCode = 1;
   } else if (command === "list") {
