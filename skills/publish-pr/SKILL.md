@@ -1,13 +1,11 @@
 ---
 name: publish-pr
-description: >-
-  Publish the current local changes to GitHub in one shot — confirm scope,
-  commit, push, and open a ready pull request. Use this whenever the user wants
-  to ship finished local work to a PR: "PR 出して" / "PR 作って" / "commit して push
-  して PR" / "これ PR にして" / "push まで" / "publish this" / "open a PR for this" /
-  "ship it". Trigger even when the ask is terse ("push しといて", "PR まで") as long
-  as there are local changes meant to go up. This is git + PR mechanics only: it
-  does NOT merge (stop at opening the PR) and does NOT run tests/build/lint
+description: >
+  Publish the current local changes to GitHub in one shot — confirm scope, commit, push, and
+  open a ready pull request. Use whenever the user wants to ship finished local work to a PR
+  ("open a PR for this", "publish this", "commit, push, and PR", "ship it"), even when the ask
+  is terse, as long as there are local changes meant to go up. This is git + PR mechanics
+  only: it does NOT merge (stop at opening the PR) and does NOT run tests/build/lint
   (correctness is a separate concern — see the boundary notes below).
 ---
 

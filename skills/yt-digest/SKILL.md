@@ -1,12 +1,10 @@
 ---
 name: yt-digest
-description:
-  YouTube 動画の transcript（字幕）を yt-dlp で取得し、動画を見ずに内容を
-  要約する。動画・音声はダウンロードしない。「この YouTube 要約して」
-  「動画の内容教えて」「transcript 取って」「見る気ないけど何の話か知りたい」、
-  YouTube URL（youtube.com / youtu.be）を貼って内容・要点・文字起こしを
-  求められたとき全般で発火する。URL だけ貼られて「これ何？」のような
-  曖昧な聞き方でも、対象が YouTube 動画なら使う。
+description: >
+  Summarize a YouTube video from its transcript (subtitles) fetched with yt-dlp, without
+  watching it; never downloads the video or audio. Use when a YouTube URL (youtube.com /
+  youtu.be) is shared and the user wants the content, key points, or a transcript — including
+  vague asks like "what's this about?" as long as the target is a YouTube video.
 ---
 
 # YT Digest

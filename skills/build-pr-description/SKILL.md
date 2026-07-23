@@ -1,14 +1,12 @@
 ---
 name: build-pr-description
 description: >
-  PR description を新規作成または全面再構築する。
-  diff・commit・会話から fact を収集し、Why/What/Test/Notes の h2 骨子と
-  1 fact 1 bullet で、reviewer が diff を読むのに必要な fact だけを書く。
-  既存 body は文単位で解体し、他の根拠と照合できた fact だけを救出する。
-  「PR の description 書いて」「PR body 書いて」「description 作って」
-  「PR の description 書き直して」「description 刷新して」「PR 説明文 rebuild」
-  「rebuild pr description」と言われたとき、また `gh pr create` / `gh pr edit` で
-  body を新規作成または全面更新するときに使う。数行の追記・修正だけなら通常編集でよい。
+  Write a PR description from scratch or fully rebuild an existing one. Gathers facts from the
+  diff, commits, and conversation, then writes only the facts a reviewer needs to read the
+  diff, as a Why / What / Test / Notes outline with one fact per bullet. An existing body is
+  broken down sentence by sentence and only facts corroborated by other evidence survive. Use
+  when creating or rewriting a PR body, including when running gh pr create or gh pr edit. Not
+  for a few added lines to an existing description — a normal edit covers that.
 ---
 
 # build-pr-description

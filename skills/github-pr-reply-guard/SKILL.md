@@ -1,12 +1,11 @@
 ---
 name: github-pr-reply-guard
-description:
-  GitHub PR の review comment 返信で thread
-  取り違えを防ぐ運用ガード。レビューコメントへの返信・対応報告・resolve
-  を行うときに使う。特に comment URL と comment ID
-  が必要なとき、`pulls/:pr/comments` から ID を確定し、返信後に `in_reply_to_id`
-  を検証するケースで使う。pending review により REST reply API が失敗する場合の
-  GraphQL fallback も扱う。
+description: >
+  Operational guard against replying to the wrong thread when responding to GitHub PR review
+  comments. Use when replying to review comments, reporting fixes, or resolving threads —
+  especially when a comment URL and comment ID are involved: confirm the ID from
+  pulls/:pr/comments and verify in_reply_to_id after replying. Also covers the GraphQL
+  fallback for when a pending review makes the REST reply API fail.
 ---
 
 # GitHub PR Reply Guard

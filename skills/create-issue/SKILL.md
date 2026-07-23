@@ -1,11 +1,9 @@
 ---
 name: create-issue
-description: >-
-  Conventional Commits prefix + flat skeleton (Problem / Impact / Notes?) で
-  GitHub issue を起票する (`gh issue create`)。create only — edit / close /
-  status lifecycle は持たない。「issue 作って」「issue 起票」「github issue
-  作って」「gh issue 作って」「リモートに issue 立てて」、英語なら "create issue"
-  / "file an issue" / "gh issue create" と言われたときに使う。
+description: >
+  File a GitHub issue with gh issue create, using a Conventional Commits prefix and a flat
+  Problem / Impact / Notes skeleton. Create-only — no edit, close, or status lifecycle. Use
+  when opening a new issue on a remote repository.
 ---
 
 # Create Issue
