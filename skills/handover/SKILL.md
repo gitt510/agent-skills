@@ -1,8 +1,8 @@
 ---
 name: handover
-description:
-  タスク/トピック単位の進捗を `HANDOVER.md` に集約記録する。「handover
-  更新して」「進捗記録して」「タスク引継ぎまとめて」と言われたときに使う。
+description: >
+  Record task- or topic-level progress into a single HANDOVER.md. Use when updating a
+  handover, logging progress, or summarizing work to hand off.
 ---
 
 # Handover

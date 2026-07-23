@@ -1,18 +1,15 @@
 ---
 name: holy-grail-html
-description: >-
-  Build a standalone, self-contained HTML document using the Holy Grail layout —
-  a full-width masthead on top, then three columns: a sticky auto-generated
-  contents-tree (TOC) that tracks scroll on the left, the body in the center,
-  and a manual Related links rail on the right. Writes the result to
-  `{slug}.html` in the directory the skill is invoked. Use whenever the user
-  wants a navigable reference, guide, explainer, or spec as an HTML file and
-  would benefit from in-page navigation. It owns the navigation structure; for
-  visual direction it invokes frontend-design, and for up-to-date HTML/CSS
-  practice it invokes modern-web-guidance. Triggers on "holy grail layout" /
-  「holy grail の doc 作って」 / "3-column reference html" / 「目次つき/3カラムの
-  html doc」 / "doc with a table of contents" / 「reference を html で」 /
-  "scroll-tracking TOC" / 「スクロール追従の目次つき doc」.
+description: >
+  Build a standalone, self-contained HTML document using the Holy Grail layout — a full-width
+  masthead on top, then three columns: a sticky auto-generated contents-tree (TOC) that tracks
+  scroll on the left, the body in the center, and a manual Related links rail on the right.
+  Writes the result to {slug}.html in the directory the skill is invoked. Use whenever the
+  user wants a navigable reference, guide, explainer, or spec as an HTML file that would
+  benefit from in-page navigation. It owns the navigation structure; for visual direction it
+  invokes frontend-design, and for up-to-date HTML/CSS practice it invokes
+  modern-web-guidance. Triggers on "holy grail layout", "3-column reference html", "doc with a
+  table of contents", "scroll-tracking TOC".
 ---
 
 # Holy Grail HTML

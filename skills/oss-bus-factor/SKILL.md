@@ -1,12 +1,12 @@
 ---
 name: oss-bus-factor
-description:
-  GitHub 公開情報のみから OSS の bus factor を 3 軸 (org meta / commit
-  cadence / PR merger 分布) で推定し、採用判断や PR comment 用の
-  governance / 活発度メモを生成する。「bus factor 見て」「OSS の継続性 / 死活
-  見て」「`<owner>/<repo>` の活発度調べて」、複数 OSS の比較で governance や
-  maintainership や採用判断を求められたとき、"bus factor" / "maintenance
-  health" / "is this OSS dead" 系の英語表現でも発火する。
+description: >
+  Estimate an open-source project's bus factor from public GitHub data alone, across three
+  axes (org metadata, commit cadence, PR-merger distribution), and produce a governance /
+  activity note for adoption decisions or PR comments. Use when assessing a project's
+  continuity, maintenance health, or whether it is effectively dead, or comparing several
+  projects on governance or maintainership. Triggers on "bus factor", "maintenance health",
+  "is this OSS dead".
 ---
 
 # OSS Bus Factor

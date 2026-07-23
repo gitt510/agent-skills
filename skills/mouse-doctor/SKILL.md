@@ -1,12 +1,11 @@
 ---
 name: mouse-doctor
-description: >-
-  macOS で全アプリのマウスクリックが突然効かなくなったときに、原因を event-tap chain
-  （LinearMouse + Karabiner-Elements）の劣化として切り分け、優先順に復旧する診断医。
-  「クリックが効かない」「クリックが効かなくなった」「マウスが効かない」「マウスクリックが反応しない」
-  「mouse-doctor」と言われたとき、あるいは全アプリで click / mouse button が反応しないと
-  報告されたときは、ツール名が挙がっていなくても迷わず使う。ハード故障や権限を疑う前に、
-  まずこの skill で event-tap の劣化を切り分ける。
+description: >
+  Diagnose and recover mouse clicks that suddenly stop working across all macOS apps, treating
+  the cause as degradation of the event-tap chain (LinearMouse + Karabiner-Elements) and
+  restoring it in priority order. Use whenever clicks or mouse buttons stop responding
+  app-wide — reach for this first, before suspecting hardware failure or permissions, even if
+  no tool is named.
 ---
 
 # Mouse Doctor

@@ -1,13 +1,12 @@
 ---
 name: build-readme
 description: >
-  component / stack の README を新規作成または全面再構築する。
-  system そのもの（code・terraform・実際の挙動）から観測可能な fact を収集し、
-  fact から section を構成して 1 fact 1 bullet で書く。既存 README は文単位で解体し、
-  実装と照合できた fact だけを救出する。決定理由の弁明・内部 how は書かない。
-  「README 書いて」「README 作って」「README 起こして」「README 刷新して」
-  「README 書き直して」「README 圧縮して」「README 再構築」と言われたときに使う。
-  既存 README への数行の追記・修正だけなら通常編集でよい。
+  Write a README from scratch or fully rebuild one. Collects observable facts from the system
+  itself (code, terraform, actual behavior), composes sections from those facts, and writes
+  one fact per bullet; decision rationale and internal how-it-works are left out. An existing
+  README is broken down sentence by sentence and only facts verifiable against the
+  implementation survive. Use when creating, rewriting, condensing, or restructuring a README.
+  Not for a few added lines to an existing README — a normal edit covers that.
 ---
 
 # build-readme
