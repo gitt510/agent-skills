@@ -6,11 +6,37 @@ Personal agent skills for Claude Code, Codex, and other agents that use the Agen
 
 This CLI is a personal environment reconciler, not a general-purpose package manager. Within a selected target, skill names present in this repository are treated as repository-owned. Therefore, `distribute` intentionally replaces same-name symlinks that point elsewhere and removes all dangling symlinks, including links not created by this repository. Run `list` first if the target directory also contains symlinks managed by hand or by another tool.
 
+The repository is published as a portfolio and reference; the author remains its primary user. Skill instructions are written in Japanese or English and may encode opinionated workflows, but should not depend on personal identifiers or fixed device configuration.
+
+macOS is the assumed operating environment. Some skills also work on Linux, but cross-platform compatibility is not a project goal unless a skill explicitly says otherwise.
+
 ## Requirements
 
-- Git clones the repository
-- Bun runs the CLI and test suite
-- Just provides optional command shortcuts
+- Git
+- Bun 1.3.14 (version used in CI)
+- Just
+
+Some skills have additional runtime requirements:
+
+- GitHub workflows: authenticated `gh`; `oss-bus-factor` also requires `jq` and network access
+- `holy-grail-html`: a desktop browser plus the `frontend-design` and `modern-web-guidance` agent skills
+- `mouse-doctor`: LinearMouse or Karabiner-Elements
+- `tmux`: `tmux` and an existing tmux session
+- `yt-digest`: Python 3, `uvx`, Node.js, and network access
+
+## Quickstart
+
+Clone the repository, inspect one target, distribute its skills, and verify the result:
+
+```bash
+git clone https://github.com/gitt510/agent-skills.git
+cd agent-skills
+just list codex
+just distribute codex
+just doctor codex
+```
+
+Replace `codex` with `agents` or `claude` as needed. Omitting the target processes all three target directories.
 
 ## Targets
 
@@ -20,23 +46,21 @@ This CLI is a personal environment reconciler, not a general-purpose package man
 | `claude` | `~/.claude/skills/` |
 | `codex` | `~/.codex/skills/` |
 
+## Skills
+
+Run `just list <target>` to inspect every repository skill together with its installation status and symlink target. The source and detailed behavior of each skill live under [`skills/`](skills/).
+
 ## Commands
 
 ```bash
-bun run --silent agent-skills <doctor|list|distribute> [agents|claude|codex]
+just <doctor|list|distribute> [agents|claude|codex]
 ```
 
 | Command | Behavior |
 | --- | --- |
-| `doctor` | Reports target health and exits non-zero while a repository skill is missing, a dangling symlink remains, or an installed skill has no `SKILL.md` |
-| `list` | Lists repository and external skills with their status and symlink target |
-| `distribute` | Reconciles repository skills after checking every selected target for real-file and real-directory conflicts |
-
-```bash
-just doctor
-just list codex
-just distribute claude
-```
+| `just doctor [target]` | Reports target health and exits non-zero while a repository skill is missing, a dangling symlink remains, or an installed skill has no `SKILL.md` |
+| `just list [target]` | Lists repository and external skills with their status and symlink target |
+| `just distribute [target]` | Reconciles repository skills after checking every selected target for real-file and real-directory conflicts |
 
 ## Distribution impact
 
@@ -46,6 +70,27 @@ just distribute claude
 - `distribute` leaves valid external skills with other names unchanged
 - `distribute` never links a repository directory that has no `SKILL.md`, and leaves any such link already in place untouched
 - `distribute` makes no changes when a repository skill destination is occupied by a real file or directory
+
+## Update, removal, and relocation
+
+Update the clone, reconcile newly added or removed skills, and check the result:
+
+```bash
+git pull --ff-only
+just list codex
+just distribute codex
+just doctor codex
+```
+
+To remove a managed link from one target, use `just list` to confirm that its destination is `MANAGED`, then unlink that destination. Do not recursively delete the target directory:
+
+```bash
+unlink ~/.codex/skills/<skill-name>
+```
+
+This is not a persistent exclusion: a later `just distribute` restores the link while the skill remains in this repository.
+
+The CLI creates absolute symlinks. After moving the repository clone, run `just list` from the new location to review the stale destinations, then run `just distribute` for each target that should follow the new path.
 
 ## Statuses
 
@@ -66,8 +111,9 @@ just distribute claude
 ## Development
 
 ```bash
-bun test
-shellcheck skills/oss-bus-factor/scripts/measure.sh skills/tmux/scripts/wait-for-text.sh
+just test
+git ls-files -z '*.sh' | xargs -0 shellcheck
+git ls-files -z '*.py' | xargs -0 -n1 python3 -m py_compile
 ```
 
 ## License

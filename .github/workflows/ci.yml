@@ -16,4 +16,7 @@ jobs:
         with:
           bun-version: 1.3.14
       - run: bun test
-      - run: shellcheck skills/oss-bus-factor/scripts/measure.sh skills/tmux/scripts/wait-for-text.sh
+      - name: Check shell scripts
+        run: git ls-files -z '*.sh' | xargs -0 -r shellcheck
+      - name: Check Python syntax
+        run: git ls-files -z '*.py' | xargs -0 -r -n1 python3 -m py_compile

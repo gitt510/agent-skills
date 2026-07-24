@@ -27,59 +27,48 @@
 
 ## P1 — 公開利用者向け
 
-- [ ] README に clone から利用開始までの Quickstart を追加する
+- [x] README に clone から利用開始までの Quickstart を追加する
   - `git clone`
   - `cd`
-  - `doctor`
-  - target を指定した `distribute`
-- [ ] README に skill catalog を追加する
-  - 概要
-  - 対応 OS
-  - 必要な外部 command
-  - 個人環境への依存有無
-- [ ] README に update、uninstall、repository 移動時の手順を追加する
-- [ ] README に target 未指定時は全 target を処理することを明記する
-- [ ] README に日本語中心・個人用途由来の repository であることを明記する
-- [ ] skill ごとの依存関係を明記する
+  - target を指定した `just list`
+  - target を指定した `just distribute`
+  - target を指定した `just doctor`
+- [x] README には skill catalog を複製せず、`just list` と `skills/` への導線を追加する
+- [x] README に update、uninstall、repository 移動時の手順を追加する
+- [x] README に target 未指定時は全 target を処理することを明記する
+- [x] README に日本語中心・個人用途由来の repository であることを明記する
+- [x] skill ごとの依存関係を明記する
   - `yt-digest`: Python、`uvx`、Node、network access
   - `oss-bus-factor`: `gh`、`jq`、network access
   - `tmux`: `tmux`
-- [ ] 最小限の `.gitignore` を追加する
+- [x] 最小限の `.gitignore` を追加する
   - `node_modules/`
   - `__pycache__/`
   - `*.pyc`
   - `.DS_Store`
   - `.env*`（必要なら `.env.example` を除外）
-- [ ] CI で全 `skills/*/SKILL.md` の存在を検証する
-- [ ] CI で directory 名と frontmatter の `name` が一致することを検証する
-- [ ] CI で frontmatter の YAML validation を行う
-- [ ] CI に Python の syntax check または unit test を追加する
-- [ ] CI に Markdown の local-link check を追加する
-- [ ] CLI を macOS でも CI test するか、対応 OS を明記する
+- [x] Bun test で全 `skills/*/SKILL.md` の存在を検証する
+- [x] Bun test で directory 名と frontmatter の `name` が一致することを検証する
+- [x] Bun test で frontmatter の YAML validation を行う
+- [x] CI の ShellCheck 対象を hardcode せず、tracked shell files から動的に列挙する
+- [x] CI に tracked Python files の syntax check を追加する
+- [x] macOS を想定環境とし、cross-platform compatibilityを保証しないことをREADMEに明記する
 
 ## P1 — GitHub 設定
 
-- [ ] `main` に branch protection または ruleset を設定する
-  - PR 経由を必須化する
-  - CI 成功を必須化する
-  - force push と branch deletion を禁止する
-- [ ] GitHub Actions を full commit SHA で固定する
-- [ ] Dependabot の `github-actions` update を有効にする
-- [ ] `CONTRIBUTING.md` を追加する
-- [ ] `SECURITY.md` を追加する
-- [ ] 最小限の pull request template を追加する
-- [ ] 使用しない GitHub Wiki を無効にする
+- [x] 使用しない GitHub Wiki を無効にする
+- [x] 残りの repository hardening を [Issue #4](https://github.com/gitt510/agent-skills/issues/4) へ移す
 
 ## P2 — リリース
 
-- [ ] `skills/weed-comment/SKILL.md` の未コミット変更を commit または退避する
+- [x] `skills/weed-comment/SKILL.md` の変更を current branch に含める
 - [ ] `bunx git-cliff` の version を固定する
 - [ ] P0 と P1 の修正後に changelog を更新する
 - [ ] 次の tag と GitHub Release を作成する
 
 ## 現在確認できていること
 
-- [x] Bun tests: 10 tests passed
+- [x] Bun tests: 25 tests passed
 - [x] ShellCheck passed
 - [x] Python syntax check passed
 - [x] 最新の GitHub Actions run passed
@@ -96,4 +85,5 @@
 - GitHub Discussions
 - npm package としての公開
 - 複雑な issue template
+- Markdown の local-link checker
 - unused feature や追加 abstraction
