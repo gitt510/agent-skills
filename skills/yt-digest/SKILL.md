@@ -15,27 +15,38 @@ description: >
 データだけから内容を把握し、「見なくて済む判断材料」を渡す。
 依頼者は内容の紹介ではなく、**見る価値があるかの判断と要点**を求めている。
 
-動画・音声・storyboard は取得しない。字幕 VTT のみ（私的使用・ローカル完結。
-著作権法30条の私的複製と30条の4の情報解析の範囲）。
+動画・音声・storyboard は取得せず、account credentials なしで公開取得できる字幕 VTT
+だけをローカルで処理する。user がアクセス・処理する権限を持つ動画だけを対象にし、
+platform の利用規約、著作権、適用法に従う。この skill 自体は利用の適法性を判断しない。
+
+## Requirements
+
+- Python 3
+- `uvx`（`uv` に同梱）
+- Node.js（`yt-dlp --js-runtimes node` から使用）
+- YouTube と package registry への network access
 
 ## 手順
 
-1. transcript を取得する:
+1. 読み込んだ `SKILL.md` の親 directory を `<skill-directory>` として解決する。
+   `~/.claude`、`~/.codex` などの固定 install path を仮定しない。
+
+2. transcript を取得する:
 
    ```bash
-   python3 ~/.claude/skills/yt-digest/scripts/fetch_transcript.py <URL> \
+   python3 "<skill-directory>/scripts/fetch_transcript.py" <URL> \
      --outdir <scratchpad>/yt-digest-<video_id>
    ```
 
-   - `uvx yt-dlp` を内部で使うのでインストール不要
+   - `uvx` が一時環境に `yt-dlp` を取得して実行する
    - 字幕の優先順位は 手動 ja → 自動 ja → 手動 en → 自動 en
      （手動字幕は人手なので誤変換がなく品質が段違い）
    - exit 2 = 字幕なし。下の Edge cases へ
 
-2. `transcript.txt` を読む。長い動画（>50k chars）は分割して読む。
+3. `transcript.txt` を読む。長い動画（>50k chars）は分割して読む。
    `meta.json` に chapters があれば構成把握の手がかりにする。
 
-3. 下の「出力の型」で要約を書く。
+4. 下の「出力の型」で要約を書く。
 
 ## 出力の型
 
