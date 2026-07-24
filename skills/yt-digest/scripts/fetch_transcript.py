@@ -23,7 +23,7 @@ import urllib.request
 from pathlib import Path
 
 # manual subs are human-made (no ASR errors) so they win over auto within a language;
-# ja wins over en because the primary user summarizes in Japanese
+# ja wins over en because this skill's output format is Japanese
 LANG_PREF = [("ja", "manual"), ("ja", "auto"), ("en", "manual"), ("en", "auto")]
 
 TAG = re.compile(r"<[^>]+>")

@@ -2,6 +2,10 @@
 
 Personal agent skills for Claude Code, Codex, and other agents that use the Agent Skills format. The included CLI distributes this repository's skills through local symlinks.
 
+## Scope and ownership
+
+This CLI is a personal environment reconciler, not a general-purpose package manager. Within a selected target, skill names present in this repository are treated as repository-owned. Therefore, `distribute` intentionally replaces same-name symlinks that point elsewhere and removes all dangling symlinks, including links not created by this repository. Run `list` first if the target directory also contains symlinks managed by hand or by another tool.
+
 ## Requirements
 
 - Git clones the repository
