@@ -19,6 +19,7 @@ macOS is the assumed operating environment. Some skills also work on Linux, but 
 Some skills have additional runtime requirements:
 
 - GitHub workflows: authenticated `gh`; `oss-bus-factor` also requires `jq` and network access
+- `add-google-task`: authenticated `gog` and network access
 - `holy-grail-html`: a desktop browser plus the `frontend-design` and `modern-web-guidance` agent skills
 - `mouse-doctor`: LinearMouse or Karabiner-Elements
 - `tmux`: `tmux` and an existing tmux session
