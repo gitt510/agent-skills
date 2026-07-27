@@ -679,7 +679,7 @@ function printHelp(): void {
   console.log(`${paint.bold("agent-skills")} — reconcile and inspect repo-managed skills
 
 ${paint.bold("Usage")}
-  agent-skills <command> [target]
+  agent-skills <command> [--target <target>]
 
 ${paint.bold("Commands")}
   doctor   Show a compact health summary and blocking details
@@ -689,9 +689,10 @@ ${paint.bold("Commands")}
   apply    Reconcile repo skills after a safe preflight
   help     Show this help
 
-${paint.bold("Targets")}
-  agents | claude | codex
-  Omit target to process all three destinations.`);
+${paint.bold("Options")}
+  -t, --target <target>   Limit to one destination: agents | claude | codex
+                          Omit to process all three
+  -h, --help              Show this help`);
 }
 
 async function main(): Promise<void> {
@@ -706,10 +707,28 @@ async function main(): Promise<void> {
     throw new Error(`Unknown command: ${command}`);
   }
 
-  const targetArgument = Bun.argv[3]?.trim();
-  if (Bun.argv.length > 4) throw new Error("Only one target may be specified");
-  if (targetArgument && !targetKeys.includes(targetArgument as TargetKey)) {
-    throw new Error(`Unknown target: ${targetArgument}; expected ${targetKeys.join(" | ")}`);
+  const rest = Bun.argv.slice(3);
+  let targetArgument: string | undefined;
+  for (let index = 0; index < rest.length; index++) {
+    const token = rest[index];
+    if (token === "--help" || token === "-h") {
+      printHelp();
+      return;
+    }
+    let value: string | undefined;
+    if (token === "--target" || token === "-t") value = rest[++index];
+    else if (token.startsWith("--target=")) value = token.slice("--target=".length);
+    else {
+      const hint = targetKeys.includes(token as TargetKey) ? `; use --target ${token}` : "";
+      throw new Error(`Unknown argument: ${token}${hint}`);
+    }
+    value = value?.trim();
+    if (!value) throw new Error("--target requires a value");
+    if (targetArgument) throw new Error("Only one target may be specified");
+    if (!targetKeys.includes(value as TargetKey)) {
+      throw new Error(`Unknown target: ${value}; expected ${targetKeys.join(" | ")}`);
+    }
+    targetArgument = value;
   }
   const selectedTargets = targetArgument
     ? targets.filter((target) => target.key === targetArgument)
