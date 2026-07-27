@@ -1,10 +1,10 @@
 # agent-skills
 
-Personal agent skills for Claude Code, Codex, and other agents that use the Agent Skills format. The included CLI distributes this repository's skills through local symlinks.
+Personal agent skills for Claude Code, Codex, and other agents that use the Agent Skills format. The included CLI links this repository's skills into local agent skill directories through symlinks.
 
 ## Scope and ownership
 
-This CLI is a personal environment reconciler, not a general-purpose package manager. Within a selected target, skill names present in this repository are treated as repository-owned. Therefore, `distribute` intentionally replaces same-name symlinks that point elsewhere and removes all dangling symlinks, including links not created by this repository. Run `list` first if the target directory also contains symlinks managed by hand or by another tool.
+This CLI is a personal environment reconciler, not a general-purpose package manager. Within a selected target, skill names present in this repository are treated as repository-owned. Therefore, `apply` intentionally replaces same-name symlinks that point elsewhere and removes all dangling symlinks, including links not created by this repository. Run `plan` or `scan` first if the target directory also contains symlinks managed by hand or by another tool.
 
 The repository is published as a portfolio and reference; the author remains its primary user. Skill instructions are written in Japanese or English and may encode opinionated workflows, but should not depend on personal identifiers or fixed device configuration.
 
@@ -27,13 +27,13 @@ Some skills have additional runtime requirements:
 
 ## Quickstart
 
-Clone the repository, inspect one target, distribute its skills, and verify the result:
+Clone the repository, preview the changes for one target, apply them, and verify the result:
 
 ```bash
 git clone https://github.com/gitt510/agent-skills.git
 cd agent-skills
-just list codex
-just distribute codex
+just plan codex
+just apply codex
 just doctor codex
 ```
 
@@ -49,28 +49,30 @@ Replace `codex` with `agents` or `claude` as needed. Omitting the target process
 
 ## Skills
 
-Run `just list <target>` to inspect every repository skill together with its installation status and symlink target. The source and detailed behavior of each skill live under [`skills/`](skills/).
+Run `just list` to see every repository skill together with its installation status in each target. The source and detailed behavior of each skill live under [`skills/`](skills/).
 
 ## Commands
 
 ```bash
-just <doctor|list|distribute> [agents|claude|codex]
+just <doctor|list|scan|plan|apply> [agents|claude|codex]
 ```
 
 | Command | Behavior |
 | --- | --- |
 | `just doctor [target]` | Reports target health and exits non-zero while a repository skill is missing, a dangling symlink remains, or an installed skill has no `SKILL.md` |
-| `just list [target]` | Lists repository and external skills with their status and symlink target |
-| `just distribute [target]` | Reconciles repository skills after checking every selected target for real-file and real-directory conflicts |
+| `just list [target]` | Shows each repository skill's status across the selected targets |
+| `just scan [target]` | Lists everything installed in each target, including external skills, with status and symlink target |
+| `just plan [target]` | Previews every action `apply` would take without changing anything, and exits non-zero when a non-symlink entry blocks `apply` |
+| `just apply [target]` | Reconciles repository skills after checking every selected target for real-file and real-directory conflicts |
 
-## Distribution impact
+## Apply impact
 
-- `distribute` creates absolute symlinks for missing repository skills
-- `distribute` replaces symlinks with repository skill names when they point somewhere else
-- `distribute` deletes every dangling symlink in the selected skills directories, including symlinks not created by this repository
-- `distribute` leaves valid external skills with other names unchanged
-- `distribute` never links a repository directory that has no `SKILL.md`, and leaves any such link already in place untouched
-- `distribute` makes no changes when a repository skill destination is occupied by a real file or directory
+- `apply` creates absolute symlinks for missing repository skills
+- `apply` replaces symlinks with repository skill names when they point somewhere else
+- `apply` deletes every dangling symlink in the selected skills directories, including symlinks not created by this repository
+- `apply` leaves valid external skills with other names unchanged
+- `apply` never links a repository directory that has no `SKILL.md`, and leaves any such link already in place untouched
+- `apply` makes no changes when a repository skill destination is occupied by a real file or directory
 
 ## Update, removal, and relocation
 
@@ -78,8 +80,8 @@ Update the clone, reconcile newly added or removed skills, and check the result:
 
 ```bash
 git pull --ff-only
-just list codex
-just distribute codex
+just plan codex
+just apply codex
 just doctor codex
 ```
 
@@ -89,9 +91,9 @@ To remove a managed link from one target, use `just list` to confirm that its de
 unlink ~/.codex/skills/<skill-name>
 ```
 
-This is not a persistent exclusion: a later `just distribute` restores the link while the skill remains in this repository.
+This is not a persistent exclusion: a later `just apply` restores the link while the skill remains in this repository.
 
-The CLI creates absolute symlinks. After moving the repository clone, run `just list` from the new location to review the stale destinations, then run `just distribute` for each target that should follow the new path.
+The CLI creates absolute symlinks. After moving the repository clone, run `just plan` from the new location to review the stale destinations, then run `just apply` for each target that should follow the new path.
 
 ## Statuses
 
@@ -106,7 +108,7 @@ The CLI creates absolute symlinks. After moving the repository clone, run `just 
 ## Repository layout
 
 - `skills/<name>/SKILL.md` is the entry point for each skill
-- `src/cli.ts` provides the distribution and inspection CLI
+- `src/cli.ts` provides the reconciliation and inspection CLI
 - `src/cli.test.ts` covers CLI behavior with isolated temporary home directories
 
 ## Development

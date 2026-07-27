@@ -49,7 +49,7 @@ type Inventory = {
   targets: TargetInventory[];
 };
 
-type DistributionResult = {
+type ApplyResult = {
   target: string;
   linked: number;
   relinked: number;
@@ -221,6 +221,18 @@ function destinationStatus(destination: Destination, staleNames: Set<string>): D
   if (!destination.skill.hasManifest) return "INCOMPLETE";
   if (destination.status === "ok") return "MANAGED";
   return staleNames.has(destination.skill.name) ? "MISSING/STALE" : "MISSING";
+}
+
+// What apply would do at one destination. Pruning of stale links is decided
+// separately from TargetInventory.stale; a "link" here may follow that prune.
+function decideDestination(
+  destination: Destination,
+  staleNames: Set<string>,
+): "link" | "relink" | "unchanged" | "skip" {
+  if (!destination.skill.hasManifest) return "skip";
+  if (destination.status === "ok") return "unchanged";
+  if (destination.kind === "symlink" && !staleNames.has(destination.skill.name)) return "relink";
+  return "link";
 }
 
 type TargetCounts = {
@@ -429,7 +441,7 @@ function renderDoctor(current: Inventory): void {
 
   console.log();
   if (totals.missing > 0 || totals.stale > 0) {
-    console.log(`${paint.yellow(paint.bold("NEEDS DISTRIBUTION"))}  run ${paint.cyan("just distribute")}`);
+    console.log(`${paint.yellow(paint.bold("PENDING CHANGES"))}  run ${paint.cyan("just apply")}`);
   }
   if (totals.incomplete > 0) {
     console.log(
@@ -442,6 +454,31 @@ function renderDoctor(current: Inventory): void {
 }
 
 function renderList(current: Inventory): void {
+  console.log(
+    `${paint.bold("Agent skills")}  ${current.skills.length} from ${paint.dim(displayPath(sourceDirectory))}`,
+  );
+  console.log();
+
+  const staleNames = current.targets.map(
+    (target) => new Set(target.stale.map((entry) => entry.name)),
+  );
+  const rows = current.skills.map((skill, skillIndex) => [
+    skill.name,
+    ...current.targets.map((target, targetIndex) =>
+      destinationStatus(target.destinations[skillIndex], staleNames[targetIndex]),
+    ),
+  ]);
+
+  console.log(renderTable(
+    ["Skill", ...current.targets.map((target) => target.target.label)],
+    rows,
+    undefined,
+    (cell, _raw, rowIndex, columnIndex) =>
+      columnIndex === 0 ? cell : statusColor(rows[rowIndex][columnIndex], cell),
+  ));
+}
+
+function renderScan(current: Inventory): void {
   console.log(
     `${paint.bold("Agent skills")}  ${current.skills.length} from ${paint.dim(displayPath(sourceDirectory))}`,
   );
@@ -485,6 +522,92 @@ function renderList(current: Inventory): void {
   }
 }
 
+const actionColor: Record<string, (text: string) => string> = {
+  LINK: paint.green,
+  RELINK: paint.yellow,
+  PRUNE: paint.red,
+  BLOCKED: paint.magenta,
+};
+
+function renderPlan(current: Inventory): void {
+  console.log(
+    `${paint.bold("Agent skills")}  ${current.skills.length} from ${paint.dim(displayPath(sourceDirectory))}`,
+  );
+  console.log();
+
+  const rows: string[][] = [];
+  const counts = { link: 0, relink: 0, unchanged: 0, prune: 0, blocked: 0 };
+
+  for (const target of current.targets) {
+    const label = target.target.label;
+    if (target.invalid) {
+      rows.push(["BLOCKED", label, "target directory", target.invalid]);
+      counts.blocked += 1;
+      continue;
+    }
+    const staleNames = new Set(target.stale.map((entry) => entry.name));
+    for (const entry of target.stale) {
+      rows.push(["PRUNE", label, entry.name, displayInstalledTarget(entry)]);
+      counts.prune += 1;
+    }
+    for (const destination of target.destinations) {
+      if (
+        destination.status === "missing" &&
+        destination.kind !== "missing" &&
+        destination.kind !== "symlink"
+      ) {
+        rows.push(["BLOCKED", label, destination.skill.name, displayLinkTarget(destination)]);
+        counts.blocked += 1;
+        continue;
+      }
+      const decision = decideDestination(destination, staleNames);
+      if (decision === "skip") continue;
+      counts[decision] += 1;
+      if (decision === "unchanged") continue;
+      rows.push([decision.toUpperCase(), label, destination.skill.name, displayLinkTarget(destination)]);
+    }
+  }
+
+  if (rows.length === 0) {
+    console.log(
+      `${paint.green(paint.bold("NO CHANGES"))}  ${counts.unchanged} destination(s) already up to date`,
+    );
+    return;
+  }
+
+  const width = terminalWidth();
+  const actionWidth = 8;
+  const targetWidth = 11;
+  const skillWidth = Math.min(25, Math.max(19, Math.floor(width * 0.26)));
+  const currentWidth = Math.max(21, width - actionWidth - targetWidth - skillWidth - 13);
+  console.log(renderTable(
+    ["Action", "Target", "Skill", "Current"],
+    rows,
+    [actionWidth, targetWidth, skillWidth, currentWidth],
+    (cell, raw, rowIndex, columnIndex) =>
+      columnIndex === 0
+        ? (actionColor[rows[rowIndex][0]] ?? ((text: string) => text))(cell)
+        : raw === "" ? paint.dim(cell) : cell,
+  ));
+
+  console.log();
+  const summary = [
+    counts.link > 0 ? `${counts.link} to link` : "",
+    counts.relink > 0 ? `${counts.relink} to relink` : "",
+    counts.prune > 0 ? `${counts.prune} to prune` : "",
+    `${counts.unchanged} unchanged`,
+  ].filter(Boolean).join(", ");
+  console.log(`${paint.bold("Plan")}  ${summary}`);
+  if (counts.blocked > 0) {
+    console.log(
+      `${paint.magenta(paint.bold("BLOCKED"))}  apply will refuse until non-symlink entries are moved away`,
+    );
+    process.exitCode = 1;
+  } else {
+    console.log(paint.dim(`Run ${paint.cyan("just apply")} to make these changes`));
+  }
+}
+
 function hasNonSymlinkObstructions(current: Inventory): boolean {
   return current.targets.some(
     (target) => target.invalid || target.destinations.some(
@@ -496,12 +619,12 @@ function hasNonSymlinkObstructions(current: Inventory): boolean {
   );
 }
 
-async function applyDistribution(current: Inventory): Promise<DistributionResult[]> {
+async function applyChanges(current: Inventory): Promise<ApplyResult[]> {
   if (hasNonSymlinkObstructions(current)) {
     throw new Error("Refusing to replace non-symlink entries; no changes were made");
   }
 
-  const results: DistributionResult[] = [];
+  const results: ApplyResult[] = [];
   for (const target of current.targets) {
     let linked = 0;
     let relinked = 0;
@@ -516,12 +639,13 @@ async function applyDistribution(current: Inventory): Promise<DistributionResult
     }
 
     for (const destination of target.destinations) {
-      // A manifest-less dir is not a loadable skill; never link it, and leave
-      // any pre-existing link untouched so a human decides its fate.
-      if (!destination.skill.hasManifest) continue;
-      if (destination.status === "ok") {
+      const decision = decideDestination(destination, stale);
+      // skip: a manifest-less dir is not a loadable skill; never link it, and
+      // leave any pre-existing link untouched so a human decides its fate.
+      if (decision === "skip") continue;
+      if (decision === "unchanged") {
         unchanged += 1;
-      } else if (destination.kind === "symlink" && !stale.has(destination.skill.name)) {
+      } else if (decision === "relink") {
         await unlink(destination.path);
         await symlink(destination.skill.source, destination.path);
         relinked += 1;
@@ -536,8 +660,8 @@ async function applyDistribution(current: Inventory): Promise<DistributionResult
   return results;
 }
 
-function renderDistribution(results: DistributionResult[]): void {
-  console.log(paint.bold("Distribution complete"));
+function renderApply(results: ApplyResult[]): void {
+  console.log(paint.bold("Apply complete"));
   console.log();
   console.log(renderTable(
     ["Target", "Linked", "Relinked", "Pruned", "Unchanged"],
@@ -552,16 +676,18 @@ function renderDistribution(results: DistributionResult[]): void {
 }
 
 function printHelp(): void {
-  console.log(`${paint.bold("agent-skills")} — distribute and inspect repo-managed skills
+  console.log(`${paint.bold("agent-skills")} — reconcile and inspect repo-managed skills
 
 ${paint.bold("Usage")}
   agent-skills <command> [target]
 
 ${paint.bold("Commands")}
-  doctor       Show a compact health summary and blocking details
-  list         List repo and external skills with symlink targets
-  distribute   Reconcile repo skills after a safe preflight
-  help         Show this help
+  doctor   Show a compact health summary and blocking details
+  list     Show each repo skill's status across targets
+  scan     List everything installed per target, including external skills
+  plan     Preview what apply would change
+  apply    Reconcile repo skills after a safe preflight
+  help     Show this help
 
 ${paint.bold("Targets")}
   agents | claude | codex
@@ -575,7 +701,7 @@ async function main(): Promise<void> {
     printHelp();
     return;
   }
-  if (!new Set(["doctor", "list", "distribute"]).has(command)) {
+  if (!new Set(["doctor", "list", "scan", "plan", "apply"]).has(command)) {
     printHelp();
     throw new Error(`Unknown command: ${command}`);
   }
@@ -598,11 +724,15 @@ async function main(): Promise<void> {
     if (unhealthy) process.exitCode = 1;
   } else if (command === "list") {
     renderList(current);
+  } else if (command === "scan") {
+    renderScan(current);
+  } else if (command === "plan") {
+    renderPlan(current);
   } else if (hasNonSymlinkObstructions(current)) {
     renderDoctor(current);
     throw new Error("Refusing to replace non-symlink entries; no changes were made");
   } else {
-    renderDistribution(await applyDistribution(current));
+    renderApply(await applyChanges(current));
   }
 }
 
