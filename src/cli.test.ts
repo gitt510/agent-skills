@@ -33,9 +33,9 @@ afterEach(async () => {
 });
 
 describe("agent-skills CLI", () => {
-  test("distributes missing skills and reports healthy", async () => {
+  test("applies missing skills and reports healthy", async () => {
     const home = await createHome();
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
 
     const destination = path.join(home, ".claude", "skills", "tmux");
     expect(await realpath(destination)).toBe(await realpath(path.join(root, "skills", "tmux")));
@@ -49,21 +49,31 @@ describe("agent-skills CLI", () => {
 
     const list = run("list", home);
     expect(list.exitCode).toBe(0);
-    expect(list.stdout).toContain("Symlink target");
+    expect(list.stdout).toContain("Skill");
+    expect(list.stdout).toContain("Agents");
+    expect(list.stdout).toContain("Claude Code");
+    expect(list.stdout).toContain("Codex");
     expect(list.stdout).toContain("tmux");
     expect(list.stdout).toContain("MANAGED");
+    expect(list.stdout).not.toContain("Symlink target");
+
+    const scan = run("scan", home);
+    expect(scan.exitCode).toBe(0);
+    expect(scan.stdout).toContain("Symlink target");
+    expect(scan.stdout).toContain("tmux");
+    expect(scan.stdout).toContain("MANAGED");
   });
 
   test("makes no changes when a non-symlink occupies a destination", async () => {
     const home = await createHome();
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
 
     const skills = path.join(home, ".claude", "skills");
     await unlink(path.join(skills, "tmux"));
     await mkdir(path.join(skills, "tmux"));
     await unlink(path.join(skills, "yt-digest"));
 
-    const result = run("distribute", home);
+    const result = run("apply", home);
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("no changes were made");
     expect(await lstat(path.join(skills, "yt-digest")).catch(() => undefined)).toBeUndefined();
@@ -71,7 +81,7 @@ describe("agent-skills CLI", () => {
 
   test("relinks a symlink that points somewhere else", async () => {
     const home = await createHome();
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
 
     const destination = path.join(home, ".claude", "skills", "tmux");
     const otherSkill = path.join(home, "other-tmux");
@@ -83,15 +93,15 @@ describe("agent-skills CLI", () => {
     expect(doctor.exitCode).toBe(1);
     expect(doctor.stdout).toContain("MISSING");
 
-    const result = run("distribute", home);
+    const result = run("apply", home);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Relinked");
     expect(await realpath(destination)).toBe(await realpath(path.join(root, "skills", "tmux")));
   });
 
-  test("lists external entries and their symlink targets", async () => {
+  test("scan lists external entries and their symlink targets", async () => {
     const home = await createHome();
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
 
     await mkdir(path.join(home, ".claude", "external-source"));
     await symlink(
@@ -100,18 +110,24 @@ describe("agent-skills CLI", () => {
     );
     await mkdir(path.join(home, ".codex", "skills", "local-skill"));
 
+    const scan = run("scan", home);
+    expect(scan.exitCode).toBe(0);
+    expect(scan.stdout).toContain("external-skill");
+    expect(scan.stdout).toContain("../external-source");
+    expect(scan.stdout).toContain("local-skill");
+    expect(scan.stdout).toContain("(directory)");
+    expect(scan.stdout).toContain("EXTERNAL");
+
+    // list stays repo-centric: external entries never appear in the matrix
     const list = run("list", home);
     expect(list.exitCode).toBe(0);
-    expect(list.stdout).toContain("external-skill");
-    expect(list.stdout).toContain("../external-source");
-    expect(list.stdout).toContain("local-skill");
-    expect(list.stdout).toContain("(directory)");
-    expect(list.stdout).toContain("EXTERNAL");
+    expect(list.stdout).not.toContain("external-skill");
+    expect(list.stdout).not.toContain("local-skill");
   });
 
   test("reports and prunes external dangling symlinks", async () => {
     const home = await createHome();
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
 
     const stale = path.join(home, ".claude", "skills", "removed-skill");
     await symlink(path.join(home, "missing-external-skill"), stale);
@@ -121,18 +137,18 @@ describe("agent-skills CLI", () => {
     expect(doctor.stdout).toContain("STALE");
     expect(doctor.stdout).toContain("removed-skill");
 
-    const list = run("list", home);
-    expect(list.stdout).toContain("removed-skill");
-    expect(list.stdout).toContain("STALE");
-    expect(list.stdout).toContain("~/missing-external-skill");
+    const scan = run("scan", home);
+    expect(scan.stdout).toContain("removed-skill");
+    expect(scan.stdout).toContain("STALE");
+    expect(scan.stdout).toContain("~/missing-external-skill");
 
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
     expect(await lstat(stale).catch(() => undefined)).toBeUndefined();
   });
 
   test("repairs a repo skill that is both missing and stale", async () => {
     const home = await createHome();
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
 
     const destination = path.join(home, ".codex", "skills", "tmux");
     await unlink(destination);
@@ -145,13 +161,13 @@ describe("agent-skills CLI", () => {
     const list = run("list", home);
     expect(list.stdout).toContain("MISSING");
 
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
     expect(await realpath(destination)).toBe(await realpath(path.join(root, "skills", "tmux")));
   });
 
   test("creates absolute symlinks in all three destinations", async () => {
     const home = await createHome();
-    expect(run("distribute", home).exitCode).toBe(0);
+    expect(run("apply", home).exitCode).toBe(0);
 
     const destinations = [
       path.join(home, ".claude", "skills", "tmux"),
@@ -165,8 +181,8 @@ describe("agent-skills CLI", () => {
 
   test("limits every command to the selected target", async () => {
     const home = await createHome();
-    const distribute = run("distribute", home, "agents");
-    expect(distribute.exitCode).toBe(0);
+    const apply = run("apply", home, "agents");
+    expect(apply.exitCode).toBe(0);
     expect(await realpath(path.join(home, ".config", "agents", "skills", "tmux"))).toBe(
       await realpath(path.join(root, "skills", "tmux")),
     );
@@ -185,6 +201,12 @@ describe("agent-skills CLI", () => {
     expect(list.stdout).toContain("Agents");
     expect(list.stdout).not.toContain("Claude Code");
     expect(list.stdout).not.toContain("Codex");
+
+    const scan = run("scan", home, "agents");
+    expect(scan.exitCode).toBe(0);
+    expect(scan.stdout).toContain("Agents");
+    expect(scan.stdout).not.toContain("Claude Code");
+    expect(scan.stdout).not.toContain("Codex");
   });
 
   test("treats an installed manifest-less source as INCOMPLETE, not EXTERNAL", async () => {
@@ -192,8 +214,8 @@ describe("agent-skills CLI", () => {
     const fixture = path.join(root, "skills", "zz-incomplete-fixture");
     await mkdir(fixture, { recursive: true });
     try {
-      // distribute skips the manifest-less dir, so it stays a benign work-in-progress
-      expect(run("distribute", home, "claude").exitCode).toBe(0);
+      // apply skips the manifest-less dir, so it stays a benign work-in-progress
+      expect(run("apply", home, "claude").exitCode).toBe(0);
       const healthy = run("doctor", home, "claude");
       expect(healthy.exitCode).toBe(0);
       expect(healthy.stdout).toContain("HEALTHY");
@@ -210,12 +232,41 @@ describe("agent-skills CLI", () => {
       expect(list.stdout).toContain("zz-incomplete-fixture");
       expect(list.stdout).toContain("INCOMPLETE");
 
-      // distribute leaves the installed link untouched — deletion is a human call
-      expect(run("distribute", home, "claude").exitCode).toBe(0);
+      // apply leaves the installed link untouched — deletion is a human call
+      expect(run("apply", home, "claude").exitCode).toBe(0);
       expect(await lstat(path.join(home, ".claude", "skills", "zz-incomplete-fixture")).catch(() => undefined)).toBeDefined();
     } finally {
       await rm(fixture, { recursive: true, force: true });
     }
+  });
+
+  test("plan previews pending changes without applying them", async () => {
+    const home = await createHome();
+    const plan = run("plan", home);
+    expect(plan.exitCode).toBe(0);
+    expect(plan.stdout).toContain("LINK");
+    expect(plan.stdout).toContain("tmux");
+    expect(plan.stdout).toContain("to link");
+    expect(await lstat(path.join(home, ".claude", "skills", "tmux")).catch(() => undefined)).toBeUndefined();
+
+    expect(run("apply", home).exitCode).toBe(0);
+    const settled = run("plan", home);
+    expect(settled.exitCode).toBe(0);
+    expect(settled.stdout).toContain("NO CHANGES");
+  });
+
+  test("plan flags non-symlink obstructions as blocked", async () => {
+    const home = await createHome();
+    expect(run("apply", home).exitCode).toBe(0);
+
+    const skills = path.join(home, ".claude", "skills");
+    await unlink(path.join(skills, "tmux"));
+    await mkdir(path.join(skills, "tmux"));
+
+    const plan = run("plan", home);
+    expect(plan.exitCode).toBe(1);
+    expect(plan.stdout).toContain("BLOCKED");
+    expect(plan.stdout).toContain("tmux");
   });
 
   test("rejects unknown targets", async () => {
