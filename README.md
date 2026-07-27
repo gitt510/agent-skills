@@ -32,12 +32,12 @@ Clone the repository, preview the changes for one target, apply them, and verify
 ```bash
 git clone https://github.com/gitt510/agent-skills.git
 cd agent-skills
-just plan codex
-just apply codex
-just doctor codex
+just plan --target codex
+just apply --target codex
+just doctor --target codex
 ```
 
-Replace `codex` with `agents` or `claude` as needed. Omitting the target processes all three target directories.
+Replace `codex` with `agents` or `claude` as needed. Omitting `--target` processes all three target directories.
 
 ## Targets
 
@@ -54,16 +54,18 @@ Run `just list` to see every repository skill together with its installation sta
 ## Commands
 
 ```bash
-just <doctor|list|scan|plan|apply> [agents|claude|codex]
+just <doctor|list|scan|plan|apply> [--target <agents|claude|codex>]
 ```
 
 | Command | Behavior |
 | --- | --- |
-| `just doctor [target]` | Reports target health and exits non-zero while a repository skill is missing, a dangling symlink remains, or an installed skill has no `SKILL.md` |
-| `just list [target]` | Shows each repository skill's status across the selected targets |
-| `just scan [target]` | Lists everything installed in each target, including external skills, with status and symlink target |
-| `just plan [target]` | Previews every action `apply` would take without changing anything, and exits non-zero when a non-symlink entry blocks `apply` |
-| `just apply [target]` | Reconciles repository skills after checking every selected target for real-file and real-directory conflicts |
+| `just doctor` | Reports target health and exits non-zero while a repository skill is missing, a dangling symlink remains, or an installed skill has no `SKILL.md` |
+| `just list` | Shows each repository skill's status across the selected targets |
+| `just scan` | Lists everything installed in each target, including external skills, with status and symlink target |
+| `just plan` | Previews every action `apply` would take without changing anything, and exits non-zero when a non-symlink entry blocks `apply` |
+| `just apply` | Reconciles repository skills after checking every selected target for real-file and real-directory conflicts |
+
+Every command accepts `--target <target>` (short form `-t`) to limit the run to one destination and `--help` to print usage.
 
 ## Apply impact
 
@@ -80,9 +82,9 @@ Update the clone, reconcile newly added or removed skills, and check the result:
 
 ```bash
 git pull --ff-only
-just plan codex
-just apply codex
-just doctor codex
+just plan --target codex
+just apply --target codex
+just doctor --target codex
 ```
 
 To remove a managed link from one target, use `just list` to confirm that its destination is `MANAGED`, then unlink that destination. Do not recursively delete the target directory:

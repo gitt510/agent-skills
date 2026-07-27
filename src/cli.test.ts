@@ -13,9 +13,9 @@ async function createHome(): Promise<string> {
   return home;
 }
 
-function run(command: string, home: string, target?: string) {
+function run(command: string, home: string, ...extra: string[]) {
   const result = Bun.spawnSync({
-    cmd: [process.execPath, cli, command, ...(target ? [target] : [])],
+    cmd: [process.execPath, cli, command, ...extra],
     env: { ...process.env, HOME: home, NO_COLOR: "1", COLUMNS: "90" },
     stdout: "pipe",
     stderr: "pipe",
@@ -181,7 +181,7 @@ describe("agent-skills CLI", () => {
 
   test("limits every command to the selected target", async () => {
     const home = await createHome();
-    const apply = run("apply", home, "agents");
+    const apply = run("apply", home, "--target", "agents");
     expect(apply.exitCode).toBe(0);
     expect(await realpath(path.join(home, ".config", "agents", "skills", "tmux"))).toBe(
       await realpath(path.join(root, "skills", "tmux")),
@@ -189,20 +189,20 @@ describe("agent-skills CLI", () => {
     expect(await lstat(path.join(home, ".claude")).catch(() => undefined)).toBeUndefined();
     expect(await lstat(path.join(home, ".codex")).catch(() => undefined)).toBeUndefined();
 
-    const doctor = run("doctor", home, "agents");
+    const doctor = run("doctor", home, "--target", "agents");
     const output = doctor.stdout;
     expect(doctor.exitCode).toBe(0);
     expect(output).toContain("Agents");
     expect(output).not.toContain("Claude Code");
     expect(output).not.toContain("Codex");
 
-    const list = run("list", home, "agents");
+    const list = run("list", home, "--target", "agents");
     expect(list.exitCode).toBe(0);
     expect(list.stdout).toContain("Agents");
     expect(list.stdout).not.toContain("Claude Code");
     expect(list.stdout).not.toContain("Codex");
 
-    const scan = run("scan", home, "agents");
+    const scan = run("scan", home, "--target", "agents");
     expect(scan.exitCode).toBe(0);
     expect(scan.stdout).toContain("Agents");
     expect(scan.stdout).not.toContain("Claude Code");
@@ -215,25 +215,25 @@ describe("agent-skills CLI", () => {
     await mkdir(fixture, { recursive: true });
     try {
       // apply skips the manifest-less dir, so it stays a benign work-in-progress
-      expect(run("apply", home, "claude").exitCode).toBe(0);
-      const healthy = run("doctor", home, "claude");
+      expect(run("apply", home, "--target", "claude").exitCode).toBe(0);
+      const healthy = run("doctor", home, "--target", "claude");
       expect(healthy.exitCode).toBe(0);
       expect(healthy.stdout).toContain("HEALTHY");
       expect(await lstat(path.join(home, ".claude", "skills", "zz-incomplete-fixture")).catch(() => undefined)).toBeUndefined();
 
       // once a symlink to it is installed, it is our skill but invalid → INCOMPLETE
       await symlink(fixture, path.join(home, ".claude", "skills", "zz-incomplete-fixture"));
-      const doctor = run("doctor", home, "claude");
+      const doctor = run("doctor", home, "--target", "claude");
       expect(doctor.exitCode).toBe(1);
       expect(doctor.stdout).toContain("INCOMPLETE");
       expect(doctor.stdout).toContain("zz-incomplete-fixture");
 
-      const list = run("list", home, "claude");
+      const list = run("list", home, "--target", "claude");
       expect(list.stdout).toContain("zz-incomplete-fixture");
       expect(list.stdout).toContain("INCOMPLETE");
 
       // apply leaves the installed link untouched — deletion is a human call
-      expect(run("apply", home, "claude").exitCode).toBe(0);
+      expect(run("apply", home, "--target", "claude").exitCode).toBe(0);
       expect(await lstat(path.join(home, ".claude", "skills", "zz-incomplete-fixture")).catch(() => undefined)).toBeDefined();
     } finally {
       await rm(fixture, { recursive: true, force: true });
@@ -271,8 +271,31 @@ describe("agent-skills CLI", () => {
 
   test("rejects unknown targets", async () => {
     const home = await createHome();
-    const result = run("list", home, "unknown");
+    const result = run("list", home, "--target", "unknown");
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("expected agents | claude | codex");
+  });
+
+  test("accepts -t as a short form of --target", async () => {
+    const home = await createHome();
+    const result = run("list", home, "-t", "agents");
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Agents");
+    expect(result.stdout).not.toContain("Codex");
+  });
+
+  test("prints help for <command> --help", async () => {
+    const home = await createHome();
+    const result = run("list", home, "--help");
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Usage");
+    expect(result.stdout).toContain("--target <target>");
+  });
+
+  test("rejects a bare operand and hints at --target", async () => {
+    const home = await createHome();
+    const result = run("list", home, "codex");
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Unknown argument: codex; use --target codex");
   });
 });
