@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "gitt510-skills",
+  "description": "Personal agent skills distributed from the gitt510/agent-skills repository",
+  "owner": {
+    "name": "gitt510",
+    "url": "https://github.com/gitt510"
+  },
+  "plugins": [
+    {
+      "name": "gitt510-skills",
+      "source": "./",
+      "description": "Personal agent skills for git, PR, docs, and task workflows",
+      "license": "MIT"
+    }
+  ]
+}
