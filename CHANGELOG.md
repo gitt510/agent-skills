@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## [0.3.0] - 2026-07-29
+
+### Features
+- Distribute skills as a Claude Code plugin (#12)
+- Add list-google-tasks skill (#9)
+- *(cli)* [**breaking**] Take target as --target/-t option and make recipes pass through *args (#8)
+- Add add-google-task skill and rework CLI verbs (list/scan/plan/apply) (#7)
+
 ## [0.2.0] - 2026-07-24
 
 ### Features
