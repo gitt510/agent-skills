@@ -47,6 +47,20 @@ Replace `codex` with `agents` or `claude` as needed. Omitting `--target` process
 | `claude` | `~/.claude/skills/` |
 | `codex` | `~/.codex/skills/` |
 
+## Claude Code plugin
+
+The repository is also installable as a Claude Code plugin. `.claude-plugin/marketplace.json` marks the repository as a plugin marketplace whose single plugin serves every skill under `skills/`:
+
+```
+/plugin marketplace add gitt510/agent-skills
+/plugin install gitt510-skills@gitt510-skills
+```
+
+- Installed skills are namespaced as `gitt510-skills:<skill-name>`
+- No version is pinned, so each commit on `main` is a new plugin version; users pick up changes with `/plugin marketplace update gitt510-skills` followed by `/plugin update`
+- Use either the plugin or the `claude` symlink target, not both: installing both registers every skill twice under two names
+- `just validate-plugins` runs `claude plugin validate . --strict` against the manifest
+
 ## Skills
 
 Run `just list` to see every repository skill together with its installation status in each target. The source and detailed behavior of each skill live under [`skills/`](skills/).
@@ -110,6 +124,7 @@ The CLI creates absolute symlinks. After moving the repository clone, run `just 
 ## Repository layout
 
 - `skills/<name>/SKILL.md` is the entry point for each skill
+- `.claude-plugin/marketplace.json` exposes the repository as a Claude Code plugin marketplace
 - `src/cli.ts` provides the reconciliation and inspection CLI
 - `src/cli.test.ts` covers CLI behavior with isolated temporary home directories
 

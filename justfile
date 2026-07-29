@@ -27,6 +27,10 @@ apply *args:
 test *args:
     @bun test {{ args }}
 
+# Validate the Claude Code plugin manifest
+validate-plugins *args:
+    @claude plugin validate . --strict {{ args }}
+
 # Regenerate CHANGELOG.md from Conventional Commit history
 changelog *args:
     @bunx git-cliff -o CHANGELOG.md {{ args }}
