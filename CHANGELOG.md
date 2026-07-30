@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here.
 
+## [0.4.0] - 2026-07-30
+
+### Features
+- *(cli)* Leave plugin-served skills to the plugin in the claude target (#14)
+
 ## [0.3.0] - 2026-07-29
 
 ### Features
