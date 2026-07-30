@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { lstat, mkdir, mkdtemp, readlink, realpath, rm, symlink, unlink } from "node:fs/promises";
+import {
+  chmod,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readlink,
+  realpath,
+  rm,
+  symlink,
+  unlink,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -13,10 +23,49 @@ async function createHome(): Promise<string> {
   return home;
 }
 
+// PATH holds only the temporary home's bin so plugin detection sees exactly the
+// `claude` these tests install, never the one on the developer's machine.
+async function writeFakeClaude(home: string, script: string): Promise<void> {
+  const bin = path.join(home, "bin");
+  await mkdir(bin, { recursive: true });
+  const executable = path.join(bin, "claude");
+  await Bun.write(executable, script);
+  await chmod(executable, 0o755);
+}
+
+async function installFakePlugin(
+  home: string,
+  skillNames: string[],
+  options: { enabled?: boolean } = {},
+): Promise<void> {
+  const manifest = await Bun.file(path.join(root, ".claude-plugin", "marketplace.json")).json();
+  const installPath = path.join(home, "plugin-cache");
+  for (const name of skillNames) {
+    await mkdir(path.join(installPath, "skills", name), { recursive: true });
+  }
+  const entries = [
+    {
+      id: `${manifest.plugins[0].name}@${manifest.name}`,
+      version: "test-version",
+      scope: "user",
+      enabled: options.enabled ?? true,
+      installPath,
+    },
+  ];
+  // echo, not cat: PATH holds only the fake bin, so the script gets no coreutils
+  await writeFakeClaude(home, `#!/bin/sh\necho '${JSON.stringify(entries)}'\n`);
+}
+
 function run(command: string, home: string, ...extra: string[]) {
   const result = Bun.spawnSync({
     cmd: [process.execPath, cli, command, ...extra],
-    env: { ...process.env, HOME: home, NO_COLOR: "1", COLUMNS: "90" },
+    env: {
+      ...process.env,
+      HOME: home,
+      PATH: path.join(home, "bin"),
+      NO_COLOR: "1",
+      COLUMNS: "90",
+    },
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -209,32 +258,32 @@ describe("agent-skills CLI", () => {
     expect(scan.stdout).not.toContain("Codex");
   });
 
-  test("treats an installed manifest-less source as INCOMPLETE, not EXTERNAL", async () => {
+  test("ignores a directory without SKILL.md", async () => {
     const home = await createHome();
-    const fixture = path.join(root, "skills", "zz-incomplete-fixture");
+    const fixture = path.join(root, "skills", "zz-no-manifest-fixture");
     await mkdir(fixture, { recursive: true });
     try {
-      // apply skips the manifest-less dir, so it stays a benign work-in-progress
+      // a directory that cannot load is not a skill: never linked, never reported
       expect(run("apply", home, "--target", "claude").exitCode).toBe(0);
-      const healthy = run("doctor", home, "--target", "claude");
-      expect(healthy.exitCode).toBe(0);
-      expect(healthy.stdout).toContain("HEALTHY");
-      expect(await lstat(path.join(home, ".claude", "skills", "zz-incomplete-fixture")).catch(() => undefined)).toBeUndefined();
-
-      // once a symlink to it is installed, it is our skill but invalid → INCOMPLETE
-      await symlink(fixture, path.join(home, ".claude", "skills", "zz-incomplete-fixture"));
       const doctor = run("doctor", home, "--target", "claude");
-      expect(doctor.exitCode).toBe(1);
-      expect(doctor.stdout).toContain("INCOMPLETE");
-      expect(doctor.stdout).toContain("zz-incomplete-fixture");
+      expect(doctor.exitCode).toBe(0);
+      expect(doctor.stdout).toContain("HEALTHY");
+      expect(doctor.stdout).not.toContain("zz-no-manifest-fixture");
+      expect(await lstat(path.join(home, ".claude", "skills", "zz-no-manifest-fixture")).catch(() => undefined)).toBeUndefined();
 
       const list = run("list", home, "--target", "claude");
-      expect(list.stdout).toContain("zz-incomplete-fixture");
-      expect(list.stdout).toContain("INCOMPLETE");
+      expect(list.stdout).not.toContain("zz-no-manifest-fixture");
 
-      // apply leaves the installed link untouched — deletion is a human call
+      // a link installed by hand is simply a name this repository does not own
+      await symlink(fixture, path.join(home, ".claude", "skills", "zz-no-manifest-fixture"));
+      const scan = run("scan", home, "--target", "claude");
+      expect(scan.stdout).toContain("zz-no-manifest-fixture");
+      expect(scan.stdout).toContain("EXTERNAL");
+      expect(run("doctor", home, "--target", "claude").exitCode).toBe(0);
+
+      // apply leaves it alone
       expect(run("apply", home, "--target", "claude").exitCode).toBe(0);
-      expect(await lstat(path.join(home, ".claude", "skills", "zz-incomplete-fixture")).catch(() => undefined)).toBeDefined();
+      expect(await lstat(path.join(home, ".claude", "skills", "zz-no-manifest-fixture")).catch(() => undefined)).toBeDefined();
     } finally {
       await rm(fixture, { recursive: true, force: true });
     }
@@ -267,6 +316,103 @@ describe("agent-skills CLI", () => {
     expect(plan.exitCode).toBe(1);
     expect(plan.stdout).toContain("BLOCKED");
     expect(plan.stdout).toContain("tmux");
+  });
+
+  test("leaves plugin-served skills to the plugin in the claude target", async () => {
+    const home = await createHome();
+    await installFakePlugin(home, ["tmux"]);
+
+    expect(run("apply", home).exitCode).toBe(0);
+    const claudeSkills = path.join(home, ".claude", "skills");
+    expect(await lstat(path.join(claudeSkills, "tmux")).catch(() => undefined)).toBeUndefined();
+    expect(await realpath(path.join(claudeSkills, "yt-digest"))).toBe(
+      await realpath(path.join(root, "skills", "yt-digest")),
+    );
+    // other targets know nothing about the plugin
+    expect(await realpath(path.join(home, ".codex", "skills", "tmux"))).toBe(
+      await realpath(path.join(root, "skills", "tmux")),
+    );
+
+    const doctor = run("doctor", home);
+    expect(doctor.exitCode).toBe(0);
+    expect(doctor.stdout).toContain("HEALTHY");
+    expect(doctor.stdout).toContain("test-version serves 1 skill(s)");
+
+    const list = run("list", home, "-t", "claude");
+    expect(list.stdout).toContain("PLUGIN");
+
+    const plan = run("plan", home);
+    expect(plan.stdout).toContain("NO CHANGES");
+    expect(plan.stdout).toContain("1 served by the plugin");
+  });
+
+  test("removes its own link once the plugin serves that skill", async () => {
+    const home = await createHome();
+    expect(run("apply", home).exitCode).toBe(0);
+    const destination = path.join(home, ".claude", "skills", "tmux");
+    expect(await lstat(destination).catch(() => undefined)).toBeDefined();
+
+    await installFakePlugin(home, ["tmux"]);
+
+    const doctor = run("doctor", home);
+    expect(doctor.exitCode).toBe(1);
+    expect(doctor.stdout).toContain("DUPLICATE");
+    expect(doctor.stdout).toContain("tmux");
+
+    const plan = run("plan", home);
+    expect(plan.exitCode).toBe(0);
+    expect(plan.stdout).toContain("UNLINK");
+    expect(plan.stdout).toContain("1 to unlink");
+
+    const apply = run("apply", home);
+    expect(apply.exitCode).toBe(0);
+    expect(apply.stdout).toContain("Unlinked");
+    expect(await lstat(destination).catch(() => undefined)).toBeUndefined();
+    // only the served skill goes; the rest of the claude target stays linked
+    expect(await realpath(path.join(home, ".claude", "skills", "yt-digest"))).toBe(
+      await realpath(path.join(root, "skills", "yt-digest")),
+    );
+    expect(run("doctor", home).exitCode).toBe(0);
+  });
+
+  test("ignores a disabled plugin", async () => {
+    const home = await createHome();
+    await installFakePlugin(home, ["tmux"], { enabled: false });
+
+    expect(run("apply", home).exitCode).toBe(0);
+    expect(await realpath(path.join(home, ".claude", "skills", "tmux"))).toBe(
+      await realpath(path.join(root, "skills", "tmux")),
+    );
+    const doctor = run("doctor", home);
+    expect(doctor.exitCode).toBe(0);
+    expect(doctor.stdout).not.toContain("serves");
+  });
+
+  test("refuses to touch the claude target when plugin state is unknown", async () => {
+    const home = await createHome();
+    await writeFakeClaude(home, "#!/bin/sh\nexit 3\n");
+
+    const plan = run("plan", home);
+    expect(plan.exitCode).toBe(1);
+    expect(plan.stdout).toContain("PLUGIN STATE UNKNOWN");
+    expect(plan.stdout).toContain("BLOCKED");
+
+    const apply = run("apply", home);
+    expect(apply.exitCode).toBe(1);
+    expect(apply.stderr).toContain("no changes were made");
+    expect(await lstat(path.join(home, ".claude")).catch(() => undefined)).toBeUndefined();
+
+    // the other targets stay reachable on their own
+    expect(run("apply", home, "-t", "codex").exitCode).toBe(0);
+  });
+
+  test("treats unparsable plugin output as unknown state", async () => {
+    const home = await createHome();
+    await writeFakeClaude(home, "#!/bin/sh\necho not-json\n");
+
+    const plan = run("plan", home, "-t", "claude");
+    expect(plan.exitCode).toBe(1);
+    expect(plan.stdout).toContain("unparsable");
   });
 
   test("rejects unknown targets", async () => {
