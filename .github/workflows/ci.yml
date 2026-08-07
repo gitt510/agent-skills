@@ -15,6 +15,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
       - run: bun test
       - name: Check shell scripts
         run: git ls-files -z '*.sh' | xargs -0 -r shellcheck
