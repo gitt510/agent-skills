@@ -33,6 +33,11 @@ apply *args:
 test *args:
     @bun test {{ args }}
 
+# Lint the TypeScript sources; extra flags pass through
+[group('dev')]
+lint *args:
+    @bun run --silent lint {{ args }}
+
 # Validate the Claude Code plugin manifest
 [group('dev')]
 validate-plugins *args:
