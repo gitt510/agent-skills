@@ -105,7 +105,7 @@ const paint = {
   green: (text: string) => colorEnabled ? `\u001b[32m${text}\u001b[39m` : text,
   yellow: (text: string) => colorEnabled ? `\u001b[33m${text}\u001b[39m` : text,
   cyan: (text: string) => colorEnabled ? `\u001b[36m${text}\u001b[39m` : text,
-  gold: (text: string) => colorEnabled ? `\u001b[93m${text}\u001b[39m` : text,
+  brightYellow: (text: string) => colorEnabled ? `\u001b[93m${text}\u001b[39m` : text,
   magenta: (text: string) => colorEnabled ? `\u001b[35m${text}\u001b[39m` : text,
 };
 
@@ -516,7 +516,7 @@ function renderTable(
 //   magenta — apply refuses to act until a human moves something aside
 //   green   — steady state this repository owns
 //   cyan    — informational; apply never touches it
-//   gold    — served by the plugin, not this repository's links
+//   bright yellow — served by the plugin, not this repository's links
 //   dim     — a count of zero
 function statusColor(status: string, text: string): string {
   if (status === "MANAGED") return paint.green(text);
@@ -524,7 +524,7 @@ function statusColor(status: string, text: string): string {
   if (status === "DUPLICATE") return paint.red(text);
   if (status.includes("STALE")) return paint.red(text);
   if (status === "EXTERNAL") return paint.cyan(text);
-  if (status === "PLUGIN") return paint.gold(text);
+  if (status === "PLUGIN") return paint.brightYellow(text);
   return text;
 }
 
@@ -534,7 +534,7 @@ const summaryColumnColor: Array<((text: string) => string) | undefined> = [
   paint.green, // Managed
   paint.yellow, // Missing
   paint.red, // Duplicate
-  paint.gold, // Plugin
+  paint.brightYellow, // Plugin
   paint.red, // Stale
   paint.cyan, // External
 ];

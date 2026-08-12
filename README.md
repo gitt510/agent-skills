@@ -148,7 +148,7 @@ Every status describes one destination on two axes: whether the name is ours or 
 | `STALE` | The destination is a symlink whose target does not exist |
 | `EXTERNAL` | The destination is a valid entry whose name this repository does not own, including a plugin-served name occupied by something else |
 
-Colour follows severity, and a count of zero is never a finding: red is broken right now (`DUPLICATE`, `STALE`), yellow is resolved by `apply` (`MISSING`), magenta is `apply` refusing to act, green is steady state (`MANAGED`), cyan is informational (`EXTERNAL`), dim is benign by design (`PLUGIN`) or zero.
+Colour follows severity, and a count of zero is never a finding: red is broken right now (`DUPLICATE`, `STALE`), yellow is resolved by `apply` (`MISSING`), magenta is `apply` refusing to act, green is steady state (`MANAGED`), cyan is informational (`EXTERNAL`), bright yellow is plugin-managed (`PLUGIN`), and dim is zero.
 
 ## Repository layout
 
