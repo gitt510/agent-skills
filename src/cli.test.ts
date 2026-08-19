@@ -96,15 +96,15 @@ describe("agent-skills CLI", () => {
     expect(doctor.exitCode).toBe(0);
     expect(doctor.stdout).toContain("HEALTHY");
 
+    // list is the inventory view: manifest descriptions, no installation state
     const list = run("list", home);
     expect(list.exitCode).toBe(0);
     expect(list.stdout).toContain("Skill");
-    expect(list.stdout).toContain("Agents");
-    expect(list.stdout).toContain("Claude Code");
-    expect(list.stdout).toContain("Codex");
+    expect(list.stdout).toContain("Description");
     expect(list.stdout).toContain("tmux");
-    expect(list.stdout).toContain("MANAGED");
-    expect(list.stdout).not.toContain("Symlink target");
+    expect(list.stdout).toContain("Control tmux panes");
+    expect(list.stdout).not.toContain("MANAGED");
+    expect(list.stdout).not.toContain("Agents");
 
     const scan = run("scan", home);
     expect(scan.exitCode).toBe(0);
@@ -207,9 +207,6 @@ describe("agent-skills CLI", () => {
     expect(doctor.exitCode).toBe(1);
     expect(doctor.stdout).toContain("STALE");
 
-    const list = run("list", home);
-    expect(list.stdout).toContain("MISSING");
-
     expect(run("apply", home).exitCode).toBe(0);
     expect(await realpath(destination)).toBe(await realpath(path.join(root, "skills", "tmux")));
   });
@@ -245,11 +242,10 @@ describe("agent-skills CLI", () => {
     expect(output).not.toContain("Claude Code");
     expect(output).not.toContain("Codex");
 
+    // list reads the repository only, so a target makes no sense there
     const list = run("list", home, "--target", "agents");
-    expect(list.exitCode).toBe(0);
-    expect(list.stdout).toContain("Agents");
-    expect(list.stdout).not.toContain("Claude Code");
-    expect(list.stdout).not.toContain("Codex");
+    expect(list.exitCode).toBe(1);
+    expect(list.stderr).toContain("--target does not apply");
 
     const scan = run("scan", home, "--target", "agents");
     expect(scan.exitCode).toBe(0);
@@ -271,7 +267,7 @@ describe("agent-skills CLI", () => {
       expect(doctor.stdout).not.toContain("zz-no-manifest-fixture");
       expect(await lstat(path.join(home, ".claude", "skills", "zz-no-manifest-fixture")).catch(() => undefined)).toBeUndefined();
 
-      const list = run("list", home, "--target", "claude");
+      const list = run("list", home);
       expect(list.stdout).not.toContain("zz-no-manifest-fixture");
 
       // a link installed by hand is simply a name this repository does not own
@@ -338,8 +334,8 @@ describe("agent-skills CLI", () => {
     expect(doctor.stdout).toContain("HEALTHY");
     expect(doctor.stdout).toContain("test-version serves 1 skill(s)");
 
-    const list = run("list", home, "-t", "claude");
-    expect(list.stdout).toContain("PLUGIN");
+    const claudeScan = run("scan", home, "-t", "claude");
+    expect(claudeScan.stdout).toContain("PLUGIN");
 
     const plan = run("plan", home);
     expect(plan.stdout).toContain("NO CHANGES");
@@ -424,7 +420,7 @@ describe("agent-skills CLI", () => {
 
   test("accepts -t as a short form of --target", async () => {
     const home = await createHome();
-    const result = run("list", home, "-t", "agents");
+    const result = run("scan", home, "-t", "agents");
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Agents");
     expect(result.stdout).not.toContain("Codex");

@@ -447,16 +447,42 @@ function terminalWidth(): number {
   return Math.max(72, process.stdout.columns || Number(process.env.COLUMNS) || 100);
 }
 
+// Widths are display columns, not code units: CJK text occupies two columns
+// per character, and length-based padding would push the table borders apart.
+function cellWidth(text: string): number {
+  return Bun.stringWidth(text);
+}
+
+function padCell(text: string, width: number): string {
+  return text + " ".repeat(Math.max(0, width - cellWidth(text)));
+}
+
 function wrapText(text: string, width: number): string[] {
   const lines: string[] = [];
 
   for (const sourceLine of text.split("\n")) {
     let remaining = sourceLine;
-    while (remaining.length > width) {
-      const slash = remaining.lastIndexOf("/", width - 1);
-      const cut = slash >= Math.floor(width / 2) ? slash + 1 : width;
-      lines.push(remaining.slice(0, cut));
-      remaining = remaining.slice(cut);
+    while (cellWidth(remaining) > width) {
+      // largest prefix that fits the column, counted in display columns
+      let fit = 0;
+      let used = 0;
+      for (const character of remaining) {
+        const characterWidth = cellWidth(character);
+        if (used + characterWidth > width) break;
+        used += characterWidth;
+        fit += character.length;
+      }
+      if (fit === 0) fit = 1;
+
+      // break at the last space or after the last slash, unless that leaves
+      // the line shorter than half the column; then hard-cut at the edge
+      const prefix = remaining.slice(0, fit);
+      const space = prefix.lastIndexOf(" ");
+      const slash = prefix.lastIndexOf("/") + 1;
+      const soft = Math.max(space, slash);
+      const cut = soft >= Math.floor(width / 2) ? soft : fit;
+      lines.push(remaining.slice(0, cut).trimEnd());
+      remaining = remaining.slice(cut).trimStart();
     }
     lines.push(remaining);
   }
@@ -479,7 +505,7 @@ function renderTable(
 ): string {
   const columnWidths = widths ?? headers.map((header, columnIndex) => {
     const values = [header, ...rows.map((row) => row[columnIndex] ?? "")];
-    return Math.max(...values.flatMap((value) => value.split("\n").map((line) => line.length)));
+    return Math.max(...values.flatMap((value) => value.split("\n").map((line) => cellWidth(line))));
   });
   const horizontal = (left: string, middle: string, right: string) =>
     left + columnWidths.map((width) => "─".repeat(width + 2)).join(middle) + right;
@@ -492,7 +518,7 @@ function renderTable(
     for (let lineIndex = 0; lineIndex < height; lineIndex += 1) {
       const rendered = wrapped.map((lines, columnIndex) => {
         const rawCell = lines[lineIndex] ?? "";
-        const paddedCell = ` ${rawCell.padEnd(columnWidths[columnIndex])} `;
+        const paddedCell = ` ${padCell(rawCell, columnWidths[columnIndex])} `;
         if (header) return paint.bold(paddedCell);
         return formatCell?.(paddedCell, rawCell, rowIndex, columnIndex) ?? paddedCell;
       });
@@ -646,27 +672,51 @@ function renderDoctor(current: Inventory): void {
   }
 }
 
-function renderList(current: Inventory): void {
-  renderHeader(current);
+// The description is the one manifest field the CLI displays. Frontmatter is
+// hand-written YAML, so this reads only the shapes the repository uses — an
+// inline scalar or a folded/literal block — and folds the value to one line.
+async function readSkillDescription(skill: Skill): Promise<string> {
+  const text = await Bun.file(path.join(skill.source, "SKILL.md")).text();
+  const lines = text.split("\n");
+  if (lines[0]?.trim() !== "---") return "";
+
+  const collected: string[] = [];
+  let inDescription = false;
+  for (const line of lines.slice(1)) {
+    if (line.trim() === "---") break;
+    if (inDescription) {
+      if (line.trim() === "") continue;
+      if (!/^\s/.test(line)) break;
+      collected.push(line.trim());
+      continue;
+    }
+    const match = line.match(/^description:\s*(.*)$/);
+    if (!match) continue;
+    inDescription = true;
+    const inline = match[1].trim();
+    if (inline && !["|", "|-", ">", ">-"].includes(inline)) {
+      collected.push(inline.replace(/^["']|["']$/g, ""));
+      break;
+    }
+  }
+  return collected.join(" ");
+}
+
+// list is the inventory view: what skills this repository holds, straight from
+// the manifests. Installation state belongs to scan, plan, and doctor.
+async function renderList(skills: Skill[]): Promise<void> {
+  console.log(
+    `${paint.bold("Agent skills")}  ${skills.length} from ${paint.dim(displayPath(sourceDirectory))}`,
+  );
   console.log();
 
-  const staleNames = current.targets.map(
-    (target) => new Set(target.stale.map((entry) => entry.name)),
+  const rows = await Promise.all(
+    skills.map(async (skill) => [skill.name, await readSkillDescription(skill)]),
   );
-  const rows = current.skills.map((skill, skillIndex) => [
-    skill.name,
-    ...current.targets.map((target, targetIndex) =>
-      destinationStatus(target.destinations[skillIndex], staleNames[targetIndex]),
-    ),
-  ]);
-
-  console.log(renderTable(
-    ["Skill", ...current.targets.map((target) => target.target.label)],
-    rows,
-    undefined,
-    (cell, _raw, rowIndex, columnIndex) =>
-      columnIndex === 0 ? cell : statusColor(rows[rowIndex][columnIndex], cell),
-  ));
+  const width = terminalWidth();
+  const skillWidth = Math.max("Skill".length, ...rows.map((row) => row[0].length));
+  const descriptionWidth = Math.max(30, width - skillWidth - 7);
+  console.log(renderTable(["Skill", "Description"], rows, [skillWidth, descriptionWidth]));
 }
 
 function renderScan(current: Inventory): void {
@@ -886,7 +936,7 @@ ${paint.bold("Usage")}
 
 ${paint.bold("Commands")}
   doctor   Show a compact health summary and blocking details
-  list     Show each repo skill's status across targets
+  list     Show each repo skill with its manifest description
   scan     List everything installed per target, including external skills
   plan     Preview what apply would change
   apply    Reconcile repo skills after a safe preflight
@@ -894,7 +944,8 @@ ${paint.bold("Commands")}
 
 ${paint.bold("Options")}
   -t, --target <target>   Limit to one destination: agents | claude | codex
-                          Omit to process all three
+                          Omit to process all three; list reads the repository
+                          only and takes no target
   -h, --help              Show this help
 
 ${paint.bold("Claude Code plugin")}
@@ -941,6 +992,11 @@ async function main(): Promise<void> {
   const selectedTargets = targetArgument
     ? targets.filter((target) => target.key === targetArgument)
     : targets;
+  if (command === "list") {
+    if (targetArgument) throw new Error("list reads the repository only; --target does not apply");
+    await renderList(await collectSkills());
+    return;
+  }
   const current = await inventory(selectedTargets);
   if (command === "doctor") {
     renderDoctor(current);
@@ -949,8 +1005,6 @@ async function main(): Promise<void> {
       return counts.missing > 0 || counts.stale > 0 || counts.duplicate > 0;
     });
     if (unhealthy) process.exitCode = 1;
-  } else if (command === "list") {
-    renderList(current);
   } else if (command === "scan") {
     renderScan(current);
   } else if (command === "plan") {

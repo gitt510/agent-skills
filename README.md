@@ -87,7 +87,7 @@ just apply --target claude    # the served skills unlink again
 
 ## Skills
 
-Run `just list` to see every repository skill together with its installation status in each target. The source and detailed behavior of each skill live under [`skills/`](skills/).
+Run `just list` to see every repository skill with the description from its manifest. The source and detailed behavior of each skill live under [`skills/`](skills/); installation status per target comes from `just scan` and `just doctor`.
 
 ## Commands
 
@@ -98,12 +98,12 @@ just <doctor|list|scan|plan|apply> [--target <agents|claude|codex>]
 | Command | Behavior |
 | --- | --- |
 | `just doctor` | Reports target health and exits non-zero while a repository skill is missing, a dangling symlink remains, or a skill is registered twice |
-| `just list` | Shows each repository skill's status across the selected targets |
+| `just list` | Shows each repository skill with the description from its manifest |
 | `just scan` | Lists everything installed in each target, including external skills, with status and symlink target |
 | `just plan` | Previews every action `apply` would take without changing anything, and exits non-zero when a non-symlink entry or an unreadable plugin state blocks `apply` |
 | `just apply` | Reconciles repository skills after checking every selected target for real-file and real-directory conflicts |
 
-Every command accepts `--target <target>` (short form `-t`) to limit the run to one destination and `--help` to print usage.
+Every command accepts `--help` to print usage. Every command except `list` accepts `--target <target>` (short form `-t`) to limit the run to one destination; `list` reads only the repository, so it rejects `--target`.
 
 ## Apply impact
 
@@ -126,7 +126,7 @@ just apply --target codex
 just doctor --target codex
 ```
 
-To remove a managed link from one target, use `just list` to confirm that its destination is `MANAGED`, then unlink that destination. Do not recursively delete the target directory:
+To remove a managed link from one target, use `just scan` to confirm that its destination is `MANAGED`, then unlink that destination. Do not recursively delete the target directory:
 
 ```bash
 unlink ~/.codex/skills/<skill-name>
