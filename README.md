@@ -22,6 +22,7 @@ macOS is the assumed operating environment. Some skills also work on Linux, but 
 Some skills have additional runtime requirements:
 
 - GitHub workflows: authenticated `gh`; `oss-bus-factor` also requires `jq` and network access
+- `dads`: authenticated `gh` and network access for fetching component sources and refreshing pinned files
 - `add-google-task`, `list-google-tasks`: authenticated `gog` and network access
 - `holy-grail-html`: a desktop browser plus the `frontend-design` and `modern-web-guidance` agent skills
 - `mouse-doctor`: LinearMouse or Karabiner-Elements
@@ -169,3 +170,4 @@ git ls-files -z '*.py' | xargs -0 -n1 python3 -m py_compile
 
 - Repository content is available under the [MIT License](LICENSE)
 - `skills/ponytail-review` retains the upstream copyright and MIT terms in its [nested license](skills/ponytail-review/LICENSE)
+- `skills/dads/references` bundles Digital Agency Design System files under their own terms, recorded in its [notice](skills/dads/references/NOTICE.md)
