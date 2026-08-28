@@ -64,18 +64,34 @@ body の有無で変えるのは fact の収集経路だけ。既存 body は候
 - allowlist と section の対応: 主張 + 根拠 → Why、変更の fact → What、
   検証結果 → Test、注記 → Notes
 
-### 形式
+### 形式 — section 内に置けるのは3形式のみ
+
+- **bullet list** — 1 bullet = 1 fact。句点なし。「以下は〜」のような document 自身への言及は
+  bullet に形を変えた paragraph であり、fact ではない
+- **table** — 各行が fact で、列の比較に意味があるとき bullet より優先する
+  （test 一覧・endpoint と契約の対応など。bullet 化すると比較可能性が落ちる）
+- **code block** — 実行した検証コマンドなど、コピペして実行できる verbatim 成果物
 
 - **Why は主張 → 根拠の2段 bullet**。主張が top-level、根拠をその直下に nest する。
   nest を使ってよいのは Why だけ
-- What / Test / Notes は build-readme と同じ3形式（bullet list / table / code block）+
-  1 fact 1 bullet。table は test 一覧・endpoint と契約の対応など、
-  行の比較に意味があるとき bullet より優先する
+- What / Test / Notes は上の3形式 + 1 fact 1 bullet
 - paragraph（地の文）は全 section で禁止
 
 例外: **Notes の bullet は理由節をぶら下げてよい**。README では理由節は弁明の
 再侵入だが、Notes では rationale が fact そのもの
 （「Tavern も検証のうえ pure pytest を採用 — assertion が YAML から漏れるため」で1 fact）。
+
+### 書き換え技法 — What を書くときの変換
+
+- **rationale → 観測可能な保証。** What で理由を説明したくなったら、変更後に成り立つ契約に変換する
+  - 悪: `synchronize` では発火しない — push のたびに再付与すると人間の操作と競合するため
+  - 良: `synchronize` では付与せず、人間による assignee の付け替えを上書きしない
+  - 契約に変換できない rationale は Notes の管轄
+- **操作 → 不変条件。** 手続き（上書きする・剥がす・付け直す）が書きにくいときは、結果の状態を書く
+  - 悪: 更新のたびに label を上書きし、古い label を削除する
+  - 良: PR には常に、最新の変更量を反映した `size/*` が1つだけ付く
+- **曖昧動詞の対象を明示。** 削除する・更新する・作る は、何に対する操作か読者が誤読する
+  （「label を削除」= repo の label 定義の削除に読める）。対象を書くか不変条件に変換する
 
 ### 判断の住処 — 問いの向きと寿命で分ける
 
@@ -135,6 +151,7 @@ body の有無で変えるのは fact の収集経路だけ。既存 body は候
 - [ ] 主張が user 確認済みか、既存 body / commit / 会話に根拠がある
 - [ ] paragraph（地の文）が1つも無い
 - [ ] 各 bullet が単一の主張または fact（Notes 以外は理由節なし）
+- [ ] 「以下は〜」型の meta-bullet（document への言及）がない
 - [ ] 恒久 fact が diff 内 doc と重複していない（PR は参照のみ）
 - [ ] 外部 SoT の値の snapshot に「現在値」の銘がある
 - [ ] Test の数値・コマンドが実装・再実行と照合済み
