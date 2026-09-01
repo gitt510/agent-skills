@@ -5,8 +5,9 @@ description: >
   itself (code, terraform, actual behavior), composes sections from those facts, and writes
   one fact per bullet; decision rationale and internal how-it-works are left out. An existing
   README is broken down sentence by sentence and only facts verifiable against the
-  implementation survive. Use when creating, rewriting, condensing, or restructuring a README.
-  Not for a few added lines to an existing README — a normal edit covers that.
+  implementation survive. Format discipline is delegated to the writing-documents skill. Use
+  when creating, rewriting, condensing, or restructuring a README. Not for a few added lines
+  to an existing README — a normal edit covers that.
 ---
 
 # build-readme
@@ -14,8 +15,10 @@ description: >
 README を「system が何であるか」の観測可能な事実の集合として書く。
 決定の物語・レビューへの弁明・実装の how は README の管轄外（PR / ADR / code の管轄）。
 
-悪い文の variation は無限にあるため、匂い狩り（denylist）ではなく
-**書いてよい文の allowlist** で判定する。該当しない文は書かない。
+**形式の規律は `writing-documents` に委譲する。** allowlist で判定するという方法、3形式
+（bullet / table / code block）と paragraph 禁止、書き換え技法、1 fact = 1 home、共通の完了
+チェックはそちらが持つ。この skill が持つのは README 固有の allowlist・section composition・
+fact の収集経路・README 固有のチェックだけ。書き始める前に `writing-documents` を invoke する。
 
 README の有無で変えるのは fact の収集経路だけ。新規作成では system から収集し、
 全面再構築では既存 README を文単位で解体して候補を救出する。
@@ -38,7 +41,7 @@ README の有無で変えるのは fact の収集経路だけ。新規作成で�
 例外として、値の出典 link 1行（例: threshold は Prow size plugin の default）は
 bikeshedding 防止として許可する。
 
-判定に迷ったら: **その文を消したとき、読者の行動や期待が変わるか？**
+削除テストの主体は **README の読者**: その文を消したとき、読者の行動や期待が変わるか。
 変わらないなら弁明なので落とす。変わるなら（保証・非自明な挙動）残す。
 
 ### section composition
@@ -82,37 +85,15 @@ allowlist は「その fact を書いてよいか」、section は「読者が�
 **Resources** は宣言、**Setup** は一度だけ行う操作、**Usage / Running** は繰り返す操作。
 前提・準備・日常操作を同じ section に混ぜない。順序に意味がある手順だけ ordered list を使う。
 
-### 形式 — section 内に置けるのは3形式のみ
+### 形式 — README 固有の適用
 
-- **bullet list** — 1 bullet = 1 fact。句点なし。「〜だが」「〜のため」で理由をぶら下げない
-  （bullet は接続詞を持てないので、弁明の再侵入を構文で防げる）。
-  fact とは **system についての事実**。「以下は〜」のような document 自身への言及は
-  bullet に形を変えた paragraph であり、fact ではない。section の意味は見出しと配置で示す
-- **table** — 各行が fact で、列の比較に意味があるとき bullet より優先する
-  （threshold 表・課金表など。bullet 化すると比較可能性が落ちる）
-- **code block** — コピペして実行する verbatim 成果物（deploy commands など）
+`writing-documents` の3形式に従い、README ではさらに次を課す。
 
-paragraph（地の文）は禁止。ordered list は順序に意味がある手順だけに使う。
-
-**1 fact = 1 home。** 同じ fact を2箇所に書かない。手で維持する概要 table・目次は
-subsection 見出しの再述になり、drift の温床（機能の列挙は `##`/`###` 見出し自体が担う）。
-fact はそれが固有に属する場所に1回だけ書き、他所からは名前で参照する。
-
-### 書き換え技法
-
-**操作 → 不変条件。** 手続き（上書きする・剥がす・付け直す）が書きにくいときは、
-結果の状態を書く。冪等性・重複排除・掃除が1文に含意される。
-
-- 悪: 更新のたびに label を上書きし、古い label を削除する
-- 良: PR には常に、最新の変更量を反映した `size/*` が1つだけ付く
-
-**rationale → 観測可能な保証。** 理由を説明したくなったら、読者から見える契約に変換する。
-
-- 悪: `synchronize` では発火しない — push のたびに再付与すると人間の操作と競合するため
-- 良: `synchronize` では付与せず、人間による assignee の付け替えを上書きしない
-
-**曖昧動詞の対象を明示。** 削除する・更新する・作る は、何に対する操作か読者が誤読する
-（「label を削除」= repo の label 定義の削除に読める）。対象を書くか不変条件に変換する。
+- **paragraph の例外は h1 直下の lead 1-2文だけ。** section 内は例外なし
+- **理由節・nest の例外は宣言しない。** README では理由節が弁明の再侵入になる
+- **table を選ぶのは列の比較に意味があるとき**（threshold 表・課金表など）
+- **概要 table・目次を手で維持しない。** subsection 見出しの再述であり、機能の列挙は
+  `##`/`###` 見出し自体が担う
 
 ### 落ちる典型（allowlist が自動で弾くもの）
 
@@ -130,30 +111,30 @@ fact はそれが固有に属する場所に1回だけ書き、他所からは�
 
 ## 手順
 
-1. 対象 README の状態に応じて fact の候補を収集する
+1. `writing-documents` を invoke し、共通の判定方法・形式・書き換え技法を読み込む
+2. 対象 README の状態に応じて fact の候補を収集する
    - README がない場合: 実装（code・terraform・justfile 等）から収集する
    - README がある場合: 現 README を**文単位**で allowlist に照合する。既存 section や構成は
      継承せず、生き残る文だけを候補にする
-2. 候補を実装と照合する。README の prose・記憶・推測・会話の記載を根拠にしない。
+3. 候補を実装と照合する。README の prose・記憶・推測・会話の記載を根拠にしない。
    内部 pipeline は、読者が観測できる結果（不変条件）に変換するか落とす
-3. 読者が体感する値と限界を抽出する。cost は
+4. 読者が体感する値と限界を抽出する。cost は
    常時課金 resource の有無 → 従量課金の軸（何に比例するか）→ 上限・抑制の仕組みの順に確認する
-4. system が前提とするが管理しない外部リソースを抽出する
-5. 読者自身が行う操作を抽出し、初回の準備・繰り返す操作・保守操作を区別する
-6. allowlist を通った fact を読者の関心ごとに cluster 化し、section composition のルールと
+5. system が前提とするが管理しない外部リソースを抽出する
+6. 読者自身が行う操作を抽出し、初回の準備・繰り返す操作・保守操作を区別する
+7. allowlist を通った fact を読者の関心ごとに cluster 化し、section composition のルールと
    canonical section palette を使って header と順序を決める
-7. 形式ルールを適用し、**提出前に「完了チェック」を1項目ずつ機械的に検査する**
+8. 形式ルールを適用し、**提出前に「完了チェック」を1項目ずつ機械的に検査する**
    （grep / 目視走査）。書く行為と検査する行為を分けないと守れない
 
 ## 完了チェック
 
-- [ ] section 内に paragraph がない（prose は h1 lead のみ）
+`writing-documents` の共通チェックに、以下を足して検査する。
+
+- [ ] prose が h1 直下の lead 1-2文に収まっている（section 内に paragraph がない）
 - [ ] 内容がない section や、固定骨子を埋めるためだけの section がない
 - [ ] 各 header が配下の fact に対する読者の関心を具体的に表している
 - [ ] 前提・一度だけ行う準備・繰り返す操作が同じ section に混ざっていない
-- [ ] 各 bullet が単一の fact で、理由節をぶら下げていない
-- [ ] 「以下は〜」型の meta-bullet（document への言及）がない
-- [ ] 同じ fact が2箇所に書かれていない（概要 table・再掲・重複 link）
+- [ ] 概要 table・目次が subsection 見出しの再述になっていない
 - [ ] 読者が体感しない内部 config 値（batch window 等）が table や bullet に紛れていない
 - [ ] Cost がある場合、その数値・上限が実装と一致している
-- [ ] 「消しても読者の行動・期待が変わらない文」が残っていない
