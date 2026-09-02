@@ -5,9 +5,8 @@ description: >
   itself (code, terraform, actual behavior), composes sections from those facts, and writes
   one fact per bullet; decision rationale and internal how-it-works are left out. An existing
   README is broken down sentence by sentence and only facts verifiable against the
-  implementation survive. Format discipline is delegated to the writing-documents skill. Use
-  when creating, rewriting, condensing, or restructuring a README. Not for a few added lines
-  to an existing README — a normal edit covers that.
+  implementation survive. Use when creating, rewriting, condensing, or restructuring a README.
+  Not for a few added lines to an existing README — a normal edit covers that.
 ---
 
 # build-readme
@@ -15,14 +14,8 @@ description: >
 README を「system が何であるか」の観測可能な事実の集合として書く。
 決定の物語・レビューへの弁明・実装の how は README の管轄外（PR / ADR / code の管轄）。
 
-**形式の規律は `writing-documents` に委譲する。** allowlist で判定するという方法、3形式
-（bullet / table / code block）と paragraph 禁止、書き換え技法、1 fact = 1 home、共通の完了
-チェックはそちらが持つ。この skill が持つのは README 固有の allowlist・section composition・
-fact の収集経路・README 固有のチェックだけ。書き始める前に `writing-documents` を invoke する。
-
-README の有無で変えるのは fact の収集経路だけ。新規作成では system から収集し、
-全面再構築では既存 README を文単位で解体して候補を救出する。
-どちらも同じ allowlist・section composition・形式・完了チェックを適用する。
+**形式の規律は `writing-documents` に委譲する。** この skill が持つのは README 固有の
+allowlist・section composition・fact の収集経路・README 固有のチェックだけ。
 
 ## ルール
 
@@ -83,17 +76,12 @@ allowlist は「その fact を書いてよいか」、section は「読者が�
 | `Troubleshooting` | 観測できる症状と読者が行う対処 |
 
 **Resources** は宣言、**Setup** は一度だけ行う操作、**Usage / Running** は繰り返す操作。
-前提・準備・日常操作を同じ section に混ぜない。順序に意味がある手順だけ ordered list を使う。
+前提・準備・日常操作を同じ section に混ぜない。
 
-### 形式 — README 固有の適用
-
-`writing-documents` の3形式に従い、README ではさらに次を課す。
+### 形式 — README の例外宣言
 
 - **paragraph の例外は h1 直下の lead 1-2文だけ。** section 内は例外なし
 - **理由節・nest の例外は宣言しない。** README では理由節が弁明の再侵入になる
-- **table を選ぶのは列の比較に意味があるとき**（threshold 表・課金表など）
-- **概要 table・目次を手で維持しない。** subsection 見出しの再述であり、機能の列挙は
-  `##`/`###` 見出し自体が担う
 
 ### 落ちる典型（allowlist が自動で弾くもの）
 
@@ -124,17 +112,14 @@ allowlist は「その fact を書いてよいか」、section は「読者が�
 6. 読者自身が行う操作を抽出し、初回の準備・繰り返す操作・保守操作を区別する
 7. allowlist を通った fact を読者の関心ごとに cluster 化し、section composition のルールと
    canonical section palette を使って header と順序を決める
-8. 形式ルールを適用し、**提出前に「完了チェック」を1項目ずつ機械的に検査する**
-   （grep / 目視走査）。書く行為と検査する行為を分けないと守れない
+8. 形式ルールを適用し、完了チェックを1項目ずつ機械的に検査する
 
 ## 完了チェック
 
 `writing-documents` の共通チェックに、以下を足して検査する。
 
-- [ ] prose が h1 直下の lead 1-2文に収まっている（section 内に paragraph がない）
 - [ ] 内容がない section や、固定骨子を埋めるためだけの section がない
 - [ ] 各 header が配下の fact に対する読者の関心を具体的に表している
 - [ ] 前提・一度だけ行う準備・繰り返す操作が同じ section に混ざっていない
-- [ ] 概要 table・目次が subsection 見出しの再述になっていない
 - [ ] 読者が体感しない内部 config 値（batch window 等）が table や bullet に紛れていない
 - [ ] Cost がある場合、その数値・上限が実装と一致している

@@ -5,10 +5,9 @@ description: >
   argument — the claims that make the change necessary, each backed by verifiable facts — and
   What / Test / Notes carry only the facts a reviewer needs to read the diff. Claims and facts
   are gathered from the diff, commits, and conversation; an existing body is broken down
-  sentence by sentence and only what survives verification is kept. Format discipline is
-  delegated to the writing-documents skill. Use when creating or rewriting a PR body,
-  including when running gh pr create or gh pr edit. Not for a few added lines to an existing
-  description — a normal edit covers that.
+  sentence by sentence and only what survives verification is kept. Use when creating or
+  rewriting a PR body, including when running gh pr create or gh pr edit. Not for a few added
+  lines to an existing description — a normal edit covers that.
 ---
 
 # build-pr-description
@@ -19,14 +18,9 @@ PR description は reviewer が diff を読むための文書。**Why は論証�
 （Google の CL description ガイド・Kubernetes template などが収束する Why → What → Test）に従う。
 how の解説は diff 自身が語るので書かない。
 
-**形式の規律は `writing-documents` に委譲する。** allowlist で判定するという方法、3形式
-（bullet / table / code block）と paragraph 禁止、書き換え技法、1 fact = 1 home、共通の完了
-チェックはそちらが持つ。この skill が持つのは PR 固有の allowlist・骨子・fact の収集経路・
-PR 固有のチェックだけ。書き始める前に `writing-documents` を invoke する。
-
+**形式の規律は `writing-documents` に委譲する。** この skill が持つのは PR 固有の
+allowlist・骨子・fact の収集経路・PR 固有のチェックだけ。
 publish-pr（PR 作成 flow）は body の作成をこの skill に委譲する。
-body の有無で変えるのは fact の収集経路だけ。既存 body は候補の入手元にはするが、
-正しい記載として継承しない。新規作成と全面再構築に同じ骨子・形式・完了チェックを適用する。
 
 ## ルール
 
@@ -67,9 +61,9 @@ body の有無で変えるのは fact の収集経路だけ。既存 body は候
 - allowlist と section の対応: 主張 + 根拠 → Why、変更の fact → What、
   検証結果 → Test、注記 → Notes
 
-### 形式 — PR 固有の例外
+### 形式 — PR の例外宣言
 
-`writing-documents` の3形式に従い、PR では次の2つだけを例外として宣言する。
+次の2つだけを例外として宣言する。
 
 - **Why は主張 → 根拠の2段 bullet。** 主張が top-level、根拠をその直下に nest する。
   nest を使ってよいのは Why だけ
@@ -77,17 +71,12 @@ body の有無で変えるのは fact の収集経路だけ。既存 body は候
   Notes では rationale が fact そのもの（「Tavern も検証のうえ pure pytest を採用 —
   assertion が YAML から漏れるため」で1 fact）
 
-What / Test は例外なし。paragraph（地の文）は全 section で禁止。
-table は test 一覧・endpoint と契約の対応のように列の比較に意味があるときに選ぶ。
-
-### What の変換
-
-`writing-documents` の「rationale → 観測可能な保証」は、PR では **What で理由を説明したく
-なったときの変換**として効く。契約に変換できない rationale は Notes の管轄。
+What / Test は例外なし。
 
 ### 判断の住処 — 問いの向きと寿命で分ける
 
-- 「なぜこの変更が要るか」→ Why の主張。「なぜ X という代替じゃないか」→ Notes に 1-2 bullet
+- 「なぜこの変更が要るか」→ Why の主張。「なぜ X という代替じゃないか」→ Notes に 1-2 bullet。
+  What で説明したくなった rationale は観測可能な保証に変換し、できないものは Notes へ
 - 将来コードを触る人が必要とする決定 → ADR / code comment。PR は merge 後に
   発掘されにくく、寿命の長い決定の恒久の家にならない
 - フル装備の「Rationale and alternatives」section を PR に張らない（RFC / ADR の形式）
@@ -127,10 +116,8 @@ table は test 一覧・endpoint と契約の対応のように列の比較に�
    外部環境を叩くものは既存の実測値を使う
 6. **Notes** — 既存 body・session から却下した代替案・設計の前例を拾う。
    merge 後に失われ、reviewer の一往復を減らす rationale だけを残す
-7. 主張と fact を骨子に配置し、形式ルールを適用する。既存 body・会話由来の文は session leak を
-   **文単位**で検査する
-8. **適用前に「完了チェック」を1項目ずつ機械的に検査する**。書く行為と検査する行為を
-   分けないと守れない
+7. 主張と fact を骨子に配置し、形式ルールを適用する
+8. 完了チェックを1項目ずつ機械的に検査する
 9. `gh pr create --body-file <file>` または `gh pr edit <num> --body-file <file>` で適用する
 10. 以後 PR に commit を積んだら、What / Test に同じ規律で追記して同期する
 
@@ -143,7 +130,6 @@ table は test 一覧・endpoint と契約の対応のように列の比較に�
 - [ ] 各主張の直下に検証済みの根拠が1つ以上 nest されている
 - [ ] どの主張も支えない fact が Why に残っていない
 - [ ] 主張が user 確認済みか、既存 body / commit / 会話に根拠がある
-- [ ] nest が Why 以外に無く、理由節が Notes 以外に無い
 - [ ] 恒久 fact が diff 内 doc と重複していない（PR は参照のみ）
 - [ ] 外部 SoT の値の snapshot に「現在値」の銘がある
 - [ ] Test の数値・コマンドが実装・再実行と照合済み
