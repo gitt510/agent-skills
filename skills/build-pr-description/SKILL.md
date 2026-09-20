@@ -18,12 +18,9 @@ PR description は reviewer が diff を読むための文書。**Why は論証�
 （Google の CL description ガイド・Kubernetes template などが収束する Why → What → Test）に従う。
 how の解説は diff 自身が語るので書かない。
 
-build-readme と同じく、匂い狩り（denylist）ではなく
-**書いてよい文の allowlist** で判定する。該当しない文は書かない。
-
+**形式の規律は `writing-documents` に委譲する。** この skill が持つのは PR 固有の
+allowlist・骨子・fact の収集経路・PR 固有のチェックだけ。
 publish-pr（PR 作成 flow）は body の作成をこの skill に委譲する。
-body の有無で変えるのは fact の収集経路だけ。既存 body は候補の入手元にはするが、
-正しい記載として継承しない。新規作成と全面再構築に同じ骨子・形式・完了チェックを適用する。
 
 ## ルール
 
@@ -43,7 +40,7 @@ body の有無で変えるのは fact の収集経路だけ。既存 body は候
 根拠のない主張はただの意見 — 根拠を見つけるか、主張ごと落とす。
 どの主張も支えない fact は Why に置かない（Notes 行きか削除）。
 
-文単位で迷ったら: **その文を消したとき、reviewer の diff の読み方や質問が変わるか？**
+削除テストの主体は **reviewer**: その文を消したとき、reviewer の diff の読み方や質問が変わるか。
 変わらないなら落とす。
 
 ### 骨子
@@ -64,38 +61,22 @@ body の有無で変えるのは fact の収集経路だけ。既存 body は候
 - allowlist と section の対応: 主張 + 根拠 → Why、変更の fact → What、
   検証結果 → Test、注記 → Notes
 
-### 形式 — section 内に置けるのは3形式のみ
+### 形式 — PR の例外宣言
 
-- **bullet list** — 1 bullet = 1 fact。句点なし。「以下は〜」のような document 自身への言及は
-  bullet に形を変えた paragraph であり、fact ではない
-- **table** — 各行が fact で、列の比較に意味があるとき bullet より優先する
-  （test 一覧・endpoint と契約の対応など。bullet 化すると比較可能性が落ちる）
-- **code block** — 実行した検証コマンドなど、コピペして実行できる verbatim 成果物
+次の2つだけを例外として宣言する。
 
-- **Why は主張 → 根拠の2段 bullet**。主張が top-level、根拠をその直下に nest する。
+- **Why は主張 → 根拠の2段 bullet。** 主張が top-level、根拠をその直下に nest する。
   nest を使ってよいのは Why だけ
-- What / Test / Notes は上の3形式 + 1 fact 1 bullet
-- paragraph（地の文）は全 section で禁止
+- **Notes の bullet は理由節をぶら下げてよい。** README では理由節は弁明の再侵入だが、
+  Notes では rationale が fact そのもの（「Tavern も検証のうえ pure pytest を採用 —
+  assertion が YAML から漏れるため」で1 fact）
 
-例外: **Notes の bullet は理由節をぶら下げてよい**。README では理由節は弁明の
-再侵入だが、Notes では rationale が fact そのもの
-（「Tavern も検証のうえ pure pytest を採用 — assertion が YAML から漏れるため」で1 fact）。
-
-### 書き換え技法 — What を書くときの変換
-
-- **rationale → 観測可能な保証。** What で理由を説明したくなったら、変更後に成り立つ契約に変換する
-  - 悪: `synchronize` では発火しない — push のたびに再付与すると人間の操作と競合するため
-  - 良: `synchronize` では付与せず、人間による assignee の付け替えを上書きしない
-  - 契約に変換できない rationale は Notes の管轄
-- **操作 → 不変条件。** 手続き（上書きする・剥がす・付け直す）が書きにくいときは、結果の状態を書く
-  - 悪: 更新のたびに label を上書きし、古い label を削除する
-  - 良: PR には常に、最新の変更量を反映した `size/*` が1つだけ付く
-- **曖昧動詞の対象を明示。** 削除する・更新する・作る は、何に対する操作か読者が誤読する
-  （「label を削除」= repo の label 定義の削除に読める）。対象を書くか不変条件に変換する
+What / Test は例外なし。
 
 ### 判断の住処 — 問いの向きと寿命で分ける
 
-- 「なぜこの変更が要るか」→ Why の主張。「なぜ X という代替じゃないか」→ Notes に 1-2 bullet
+- 「なぜこの変更が要るか」→ Why の主張。「なぜ X という代替じゃないか」→ Notes に 1-2 bullet。
+  What で説明したくなった rationale は観測可能な保証に変換し、できないものは Notes へ
 - 将来コードを触る人が必要とする決定 → ADR / code comment。PR は merge 後に
   発掘されにくく、寿命の長い決定の恒久の家にならない
 - フル装備の「Rationale and alternatives」section を PR に張らない（RFC / ADR の形式）
@@ -119,41 +100,37 @@ body の有無で変えるのは fact の収集経路だけ。既存 body は候
 - **diff 内 doc の再掲** — README に書いた恒久 fact の丸写し。reviewer は diff で doc を読む
 - **動機の取り違え** — assertion や実装が参照する issue を「関連 issue:」として
   動機に昇格させたもの。test が #N の契約を検証することと、PR の動機が #N であることは別
-- **session leak** — 会話の文脈への言及・自己弁護 tone
 
 ## 手順 — 主張と fact の収集・適用
 
-1. 既存 body がある場合は `gh pr view --json body` で取得し、**文単位**で allowlist に照合する。
+1. `writing-documents` を invoke し、共通の判定方法・形式・書き換え技法を読み込む
+2. 既存 body がある場合は `gh pr view --json body` で取得し、**文単位**で allowlist に照合する。
    section や構成は継承せず、生き残る文だけを候補にする
-2. **What** — diff（`git diff` / `gh pr diff`）から観測できる変更と、変更後の対外契約を拾う。
+3. **What** — diff（`git diff` / `gh pr diff`）から観測できる変更と、変更後の対外契約を拾う。
    既存 body と diff が食い違う場合は diff を正とする
-3. **Why の主張は diff から導出できない**。既存 body・会話・commit message・既存 issue に求め、
+4. **Why の主張は diff から導出できない**。既存 body・会話・commit message・既存 issue に求め、
    無ければ user に確認する。根拠はコード・実 resource・実測で検証してから主張の下に置く。
    関連しそうな issue link を勝手に動機へ昇格させない
-4. **Test** — session 中に実際に実行した検証コマンドと実測値を拾う。既存 body の記載値は
+5. **Test** — session 中に実際に実行した検証コマンドと実測値を拾う。既存 body の記載値は
    信じず、安全に再実行できるもの（`--collect-only`・lint 等）は再実行して照合する。
    外部環境を叩くものは既存の実測値を使う
-5. **Notes** — 既存 body・session から却下した代替案・設計の前例を拾う。
+6. **Notes** — 既存 body・session から却下した代替案・設計の前例を拾う。
    merge 後に失われ、reviewer の一往復を減らす rationale だけを残す
-6. 主張と fact を骨子に配置し、形式ルールを適用する。既存 body・会話由来の文は session leak を
-   **文単位**で検査する
-7. **適用前に「完了チェック」を1項目ずつ機械的に検査する**。書く行為と検査する行為を
-   分けないと守れない
-8. `gh pr create --body-file <file>` または `gh pr edit <num> --body-file <file>` で適用する
-9. 以後 PR に commit を積んだら、What / Test に同じ規律で追記して同期する
+7. 主張と fact を骨子に配置し、形式ルールを適用する
+8. 完了チェックを1項目ずつ機械的に検査する
+9. `gh pr create --body-file <file>` または `gh pr edit <num> --body-file <file>` で適用する
+10. 以後 PR に commit を積んだら、What / Test に同じ規律で追記して同期する
 
 ## 完了チェック
+
+`writing-documents` の共通チェックに、以下を足して検査する。
 
 - [ ] Why の各 top-level bullet が主張（判断の叙述文）である — 事実の陳列になっていない
 - [ ] 全主張が「偽なら PR が不要になる」を満たす
 - [ ] 各主張の直下に検証済みの根拠が1つ以上 nest されている
 - [ ] どの主張も支えない fact が Why に残っていない
 - [ ] 主張が user 確認済みか、既存 body / commit / 会話に根拠がある
-- [ ] paragraph（地の文）が1つも無い
-- [ ] 各 bullet が単一の主張または fact（Notes 以外は理由節なし）
-- [ ] 「以下は〜」型の meta-bullet（document への言及）がない
 - [ ] 恒久 fact が diff 内 doc と重複していない（PR は参照のみ）
 - [ ] 外部 SoT の値の snapshot に「現在値」の銘がある
 - [ ] Test の数値・コマンドが実装・再実行と照合済み
 - [ ] Notes が「reviewer が聞くであろう質問への先回り」だけで構成されている
-- [ ] 消しても reviewer の読み方が変わらない文が残っていない
