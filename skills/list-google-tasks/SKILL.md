@@ -18,9 +18,9 @@ skill ends at presentation — what happens next (planning a flow, prioritizing,
 completing tasks) is ordinary conversation, not this skill.
 
 This skill is **read-only, enforced by mechanism**: every call carries `--readonly`,
-which makes gog reject mutating API requests at runtime. Adding is `add-google-task`;
-completing, editing, and deleting are out of scope — use `gog tasks` subcommands
-directly (with the user's explicit go-ahead) when that need arises.
+which makes gog reject mutating API requests at runtime. Adding, completing,
+editing, and deleting are out of scope — use `gog tasks` subcommands directly
+(with the user's explicit go-ahead) when that need arises.
 
 ## Identity stays out of the repo
 
@@ -103,7 +103,7 @@ the user explicitly; this skill never segues into mutation on its own.
   explicitly, and only for that invocation — it never becomes a default.
 - **`--json --readonly --no-input` on every call.** `--readonly` is the mechanical
   guarantee behind "this skill only looks"; never drop it.
-- **No confirmation gate.** Reads are safe to just do — the summary-before-write
-  ritual of `add-google-task` has no counterpart here.
+- **No confirmation gate.** Reads are safe to just do; there is no
+  summary-before-write step.
 - **Fetching ends the skill.** Completing, editing, deleting, and adding are out of
   scope; extend with a separate skill when a real need appears.
