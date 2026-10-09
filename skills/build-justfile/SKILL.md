@@ -78,17 +78,42 @@ db-migrate:
 大型でも group 属性を使わず `# ---- db ----` のような section コメントだけで
 区切る OSS もある (oxc がこれ)。どちらでもよいが、片方に統一する。
 
+### 6. recipe にするのは手間を減らす動作だけ
+
+native を 1 発叩くだけの recipe は作らない。recipe にするのは次のどれかに当たるものだけ:
+(a) 複数コマンドの組み合わせ、(b) 忘れやすい flag / path を固定するもの、
+(c) `just --list` に入口として並べたいもの (`build` / `test` / `check` のような定番動作)。
+引数を転送するだけの recipe (`just add X` → `bun add X`) は just を覚える手間が増えるだけ。
+
+```just
+# bad: forwards args to a native subcommand, adds nothing
+add *args:
+    bun add {{args}}
+
+# good: pins flags that are easy to forget
+# Run the test suite; extra flags pass through
+test *args:
+    cargo test --all-features {{args}}
+```
+
+実測した OSS でも `*args` を取る recipe は必ず flag / env / path を足している
+(oxc の `test` / `lint` / `doc` は flag・env、sway の `run-tests` は script path)。素の 1 行 recipe は
+eza の `build: cargo build` のような入口用途 (c) だけ。再構築では既存 recipe を消さない
+(挙動を変えない) — 該当しそうなものは削除候補として報告に留める。
+
 ## 手順
 
 1. 対象を把握する。新規なら実行したい動作を洗い出す。既存なら recipe を 1 本ずつ読み、
-   名前・引数・default・コメントを上の 5 ルールに照合する
+   名前・引数・default・コメントを上の 6 ルールに照合する
 2. 引数なし `just` で一覧が出るよう、先頭に private `_default` を置く (ルール 1)
 3. 各 recipe 名を verb / verb-noun kebab に直す。status / report 系だけ noun を許す (ルール 2)
 4. 下位ツールへ渡す可変長引数を小文字 `*args` に統一する (ルール 3)
 5. 各 recipe 直上に英語 1 行の doc-comment を付ける (ルール 4)
 6. recipe 数を見て group の要否を判断し、使うなら `[group(...)]` かコメント section の
    どちらかに統一する (ルール 5)
-7. 提出前に「完了チェック」を 1 項目ずつ機械的に検査する
+7. 新しく足す recipe がルール 6 の (a)(b)(c) のどれかに当たるか確かめ、引数を転送するだけの
+   recipe は作らない。再構築では既存の該当 recipe を削除候補として報告する (ルール 6)
+8. 提出前に「完了チェック」を 1 項目ずつ機械的に検査する
 
 ## 完了チェック
 
@@ -97,4 +122,5 @@ db-migrate:
 - [ ] 可変長引数がすべて小文字 `*args`。大文字 `*ARGS` が 1 つもない
 - [ ] 各 recipe 直上に英語 1 行の doc-comment がある
 - [ ] recipe が少数なら group なし。多いなら `[group(...)]` かコメント section の一方に統一
+- [ ] 新しく足した recipe に、引数を転送するだけの recipe が無い
 - [ ] 個人的な癖 (emoji の状態記号・罫線 divider・過剰な安全ガード) を持ち込んでいない
