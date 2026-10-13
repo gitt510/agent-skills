@@ -1,22 +1,22 @@
 ---
-name: init-repo
+name: create-repo
 description: >
   Initialize a brand-new GitHub repository and land in a ready-to-work checkout: create the
   remote with gh repo create, clone it under the ghq root, push a single empty "chore: init"
-  commit as main's root, then cut a fixed `bootstrap` branch and stop there. Use when starting
+  commit as main's root, then cut a fixed `scaffold` branch and stop there. Use when starting
   a repository from zero ("new repo", "repo 作って", "リポジトリ新規作成"). Init only — no
-  README/LICENSE scaffolding, no PR, no CI or branch protection; those belong to later steps
-  on the bootstrap branch.
+  layout, README, or LICENSE, no PR, no CI or branch protection; those belong to later steps
+  on the scaffold branch.
 ---
 
-# Init Repo
+# Create Repo
 
 Goal: Go from "no repository" to "an empty repository with a clean root commit,
-checked out locally on a `bootstrap` branch, ready for the first real work".
+checked out locally on a `scaffold` branch, ready for the first real work".
 
 The design intent: `main` starts as a single empty commit and stays clean.
-Everything that makes the repository useful — README, license, tooling — arrives
-later via pull requests from the `bootstrap` branch. This skill only prepares
+Everything that makes the repository useful — directory layout, README, license,
+tooling — arrives later via pull requests from the `scaffold` branch. This skill only prepares
 that starting line; it never writes project files itself.
 
 ## Why an empty init commit
@@ -86,24 +86,24 @@ git push -u origin main
 The second `-m` carries the `Co-Authored-By` trailer your harness convention
 specifies — this commit is authored through the agent, same as any other.
 
-### 5) Cut the bootstrap branch
+### 5) Cut the scaffold branch
 
 ```bash
-git switch -c bootstrap
+git switch -c scaffold
 ```
 
-The branch name is fixed: `bootstrap`, always. Local only — it gets pushed
+The branch name is fixed: `scaffold`, always. Local only — it gets pushed
 when the first real work goes up (typically via `publish-pr`).
 
 ### 6) Report
 
 Give the user the repository URL, the local path, and the current branch
-(`bootstrap`), and note that `main` holds exactly one empty commit.
+(`scaffold`), and note that `main` holds exactly one empty commit.
 
 ## Boundaries
 
-- **No project files.** README, LICENSE, justfile, `.gitignore` — all of it is
-  bootstrap-branch work owned by other skills (`build-readme`,
+- **No project files.** Directory layout, README, LICENSE, justfile, `.gitignore` —
+  all of it is scaffold-branch work owned by other skills (`build-readme`,
   `build-justfile`) or the user.
 - **No PR.** Opening the first PR belongs to `publish-pr`.
 - **No CI / branch protection / repo settings.** Separate concerns, configured
