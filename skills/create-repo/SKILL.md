@@ -1,12 +1,6 @@
 ---
 name: create-repo
-description: >
-  Initialize a brand-new GitHub repository and land in a ready-to-work checkout: create the
-  remote with gh repo create, clone it under the ghq root, push a single empty "chore: init"
-  commit as main's root, then cut a fixed `scaffold` branch and stop there. Use when starting
-  a repository from zero ("new repo", "repo 作って", "リポジトリ新規作成"). Init only — no
-  layout, README, or LICENSE, no PR, no CI or branch protection; those belong to later steps
-  on the scaffold branch.
+description: Create a new GitHub repository with an empty root commit and check it out on a scaffold branch. Use when starting a repository from zero.
 ---
 
 # Create Repo

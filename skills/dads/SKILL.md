@@ -1,16 +1,6 @@
 ---
 name: dads
-description: >
-  Reference knowledge for the Digital Agency Design System (DADS, デジタル庁デザインシステム):
-  pinned design tokens, official dads-* component markup and porting rules, curated usage
-  guidelines, and compliance policy. Use whenever output should look DADS-compliant —
-  building a new page, artifact, or HTML document in DADS style, restyling an existing
-  frontend to DADS (「DADS 風に」「デジタル庁デザインシステム準拠に」「デジタル庁っぽく」),
-  auditing markup against official DADS components, or fetching DADS tokens/components from
-  primary sources. This skill owns only the visual layer — colors, typography, components,
-  usage rules, policy — and composes with whatever owns structure and medium (artifact-design,
-  holy-grail-html, a React app, plain HTML edits). Triggers on "DADS", "デジタル庁デザイン
-  システム", "dads-*", "digital-go-jp", "Japanese government design system".
+description: Design tokens, components, and usage rules of the Digital Agency Design System (DADS, デジタル庁デザインシステム). Use when output should look DADS-compliant or markup is audited against DADS.
 ---
 
 # DADS — Digital Agency Design System
@@ -30,8 +20,6 @@ It deliberately does **not** own structure or medium. Compose it:
 - New artifact → `artifact-design` (and the Artifact tool's constraints) own the medium;
   this skill owns the look. See `references/artifact.md` for where the two collide (CSP,
   dark theme).
-- Long-form HTML doc → `holy-grail-html` owns the navigation shell; this skill replaces
-  the free-form visual direction.
 - Existing frontend restyle → the codebase owns structure; change only what the
   three-layer check below flags as deviating.
 

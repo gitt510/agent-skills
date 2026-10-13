@@ -1,8 +1,6 @@
 ---
 name: handover
-description: >
-  Record task- or topic-level progress into a single HANDOVER.md. Use when updating a
-  handover, logging progress, or summarizing work to hand off.
+description: Record task or topic progress in a single HANDOVER.md. Use when updating a handover or summarizing work to hand off.
 ---
 
 # Handover

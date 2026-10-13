@@ -1,12 +1,6 @@
 ---
 name: create-pr
-description: >
-  Turn the current local changes into an open pull request in one shot — confirm scope,
-  commit, push, and create a ready pull request. Use whenever the user wants to ship finished local work to a PR
-  ("open a PR for this", "publish this", "commit, push, and PR", "ship it"), even when the ask
-  is terse, as long as there are local changes meant to go up. This is git + PR mechanics
-  only: it does NOT merge (stop at opening the PR) and does NOT run tests/build/lint
-  (correctness is a separate concern — see the boundary notes below).
+description: Commit the current local changes, push them, and open a pull request without merging. Use when shipping local work as a PR.
 ---
 
 # Create PR

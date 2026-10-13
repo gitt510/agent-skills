@@ -20,8 +20,6 @@ Some skills have additional runtime requirements:
 
 - GitHub workflows: authenticated `gh`; `oss-bus-factor` also requires `jq` and network access
 - `dads`: authenticated `gh` and network access for fetching component sources and refreshing pinned files
-- `list-google-tasks`: authenticated `gog` and network access
-- `holy-grail-html`: a desktop browser plus the `frontend-design` and `modern-web-guidance` agent skills
 - `mouse-doctor`: LinearMouse or Karabiner-Elements
 - `tmux`: `tmux` and an existing tmux session
 - `yt-digest`: Python 3, `uvx`, Node.js, and network access

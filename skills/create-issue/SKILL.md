@@ -1,9 +1,6 @@
 ---
 name: create-issue
-description: >
-  File a GitHub issue with gh issue create, using a Conventional Commits prefix and a flat
-  Problem / Impact / Notes skeleton. Create-only — no edit, close, or status lifecycle. Use
-  when opening a new issue on a remote repository.
+description: File a new GitHub issue with gh issue create. Use when opening an issue on a repository.
 ---
 
 # Create Issue
