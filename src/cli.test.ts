@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
-  chmod,
   lstat,
   mkdir,
   mkdtemp,
@@ -21,39 +20,6 @@ async function createHome(): Promise<string> {
   const home = await mkdtemp(path.join(tmpdir(), "agent-skills-test-"));
   temporaryHomes.push(home);
   return home;
-}
-
-// PATH holds only the temporary home's bin so plugin detection sees exactly the
-// `claude` these tests install, never the one on the developer's machine.
-async function writeFakeClaude(home: string, script: string): Promise<void> {
-  const bin = path.join(home, "bin");
-  await mkdir(bin, { recursive: true });
-  const executable = path.join(bin, "claude");
-  await Bun.write(executable, script);
-  await chmod(executable, 0o755);
-}
-
-async function installFakePlugin(
-  home: string,
-  skillNames: string[],
-  options: { enabled?: boolean } = {},
-): Promise<void> {
-  const manifest = await Bun.file(path.join(root, ".claude-plugin", "marketplace.json")).json();
-  const installPath = path.join(home, "plugin-cache");
-  for (const name of skillNames) {
-    await mkdir(path.join(installPath, "skills", name), { recursive: true });
-  }
-  const entries = [
-    {
-      id: `${manifest.plugins[0].name}@${manifest.name}`,
-      version: "test-version",
-      scope: "user",
-      enabled: options.enabled ?? true,
-      installPath,
-    },
-  ];
-  // echo, not cat: PATH holds only the fake bin, so the script gets no coreutils
-  await writeFakeClaude(home, `#!/bin/sh\necho '${JSON.stringify(entries)}'\n`);
 }
 
 function run(command: string, home: string, ...extra: string[]) {
@@ -86,8 +52,9 @@ describe("agent-skills CLI", () => {
     const home = await createHome();
     expect(run("apply", home).exitCode).toBe(0);
 
-    const destination = path.join(home, ".claude", "skills", "tmux");
+    const destination = path.join(home, ".codex", "skills", "tmux");
     expect(await realpath(destination)).toBe(await realpath(path.join(root, "skills", "tmux")));
+    expect(await lstat(path.join(home, ".claude")).catch(() => undefined)).toBeUndefined();
     expect(await realpath(path.join(home, ".config", "agents", "skills", "tmux"))).toBe(
       await realpath(path.join(root, "skills", "tmux")),
     );
@@ -117,7 +84,7 @@ describe("agent-skills CLI", () => {
     const home = await createHome();
     expect(run("apply", home).exitCode).toBe(0);
 
-    const skills = path.join(home, ".claude", "skills");
+    const skills = path.join(home, ".codex", "skills");
     await unlink(path.join(skills, "tmux"));
     await mkdir(path.join(skills, "tmux"));
     await unlink(path.join(skills, "yt-digest"));
@@ -132,7 +99,7 @@ describe("agent-skills CLI", () => {
     const home = await createHome();
     expect(run("apply", home).exitCode).toBe(0);
 
-    const destination = path.join(home, ".claude", "skills", "tmux");
+    const destination = path.join(home, ".codex", "skills", "tmux");
     const otherSkill = path.join(home, "other-tmux");
     await mkdir(otherSkill);
     await unlink(destination);
@@ -152,10 +119,10 @@ describe("agent-skills CLI", () => {
     const home = await createHome();
     expect(run("apply", home).exitCode).toBe(0);
 
-    await mkdir(path.join(home, ".claude", "external-source"));
+    await mkdir(path.join(home, ".codex", "external-source"));
     await symlink(
       "../external-source",
-      path.join(home, ".claude", "skills", "external-skill"),
+      path.join(home, ".codex", "skills", "external-skill"),
     );
     await mkdir(path.join(home, ".codex", "skills", "local-skill"));
 
@@ -178,7 +145,7 @@ describe("agent-skills CLI", () => {
     const home = await createHome();
     expect(run("apply", home).exitCode).toBe(0);
 
-    const stale = path.join(home, ".claude", "skills", "removed-skill");
+    const stale = path.join(home, ".codex", "skills", "removed-skill");
     await symlink(path.join(home, "missing-external-skill"), stale);
 
     const doctor = run("doctor", home);
@@ -211,12 +178,11 @@ describe("agent-skills CLI", () => {
     expect(await realpath(destination)).toBe(await realpath(path.join(root, "skills", "tmux")));
   });
 
-  test("creates absolute symlinks in all three destinations", async () => {
+  test("creates absolute symlinks in both destinations", async () => {
     const home = await createHome();
     expect(run("apply", home).exitCode).toBe(0);
 
     const destinations = [
-      path.join(home, ".claude", "skills", "tmux"),
       path.join(home, ".codex", "skills", "tmux"),
       path.join(home, ".config", "agents", "skills", "tmux"),
     ];
@@ -232,14 +198,12 @@ describe("agent-skills CLI", () => {
     expect(await realpath(path.join(home, ".config", "agents", "skills", "tmux"))).toBe(
       await realpath(path.join(root, "skills", "tmux")),
     );
-    expect(await lstat(path.join(home, ".claude")).catch(() => undefined)).toBeUndefined();
     expect(await lstat(path.join(home, ".codex")).catch(() => undefined)).toBeUndefined();
 
     const doctor = run("doctor", home, "--target", "agents");
     const output = doctor.stdout;
     expect(doctor.exitCode).toBe(0);
     expect(output).toContain("Agents");
-    expect(output).not.toContain("Claude Code");
     expect(output).not.toContain("Codex");
 
     // list reads the repository only, so a target makes no sense there
@@ -250,7 +214,6 @@ describe("agent-skills CLI", () => {
     const scan = run("scan", home, "--target", "agents");
     expect(scan.exitCode).toBe(0);
     expect(scan.stdout).toContain("Agents");
-    expect(scan.stdout).not.toContain("Claude Code");
     expect(scan.stdout).not.toContain("Codex");
   });
 
@@ -260,26 +223,26 @@ describe("agent-skills CLI", () => {
     await mkdir(fixture, { recursive: true });
     try {
       // a directory that cannot load is not a skill: never linked, never reported
-      expect(run("apply", home, "--target", "claude").exitCode).toBe(0);
-      const doctor = run("doctor", home, "--target", "claude");
+      expect(run("apply", home, "--target", "codex").exitCode).toBe(0);
+      const doctor = run("doctor", home, "--target", "codex");
       expect(doctor.exitCode).toBe(0);
       expect(doctor.stdout).toContain("HEALTHY");
       expect(doctor.stdout).not.toContain("zz-no-manifest-fixture");
-      expect(await lstat(path.join(home, ".claude", "skills", "zz-no-manifest-fixture")).catch(() => undefined)).toBeUndefined();
+      expect(await lstat(path.join(home, ".codex", "skills", "zz-no-manifest-fixture")).catch(() => undefined)).toBeUndefined();
 
       const list = run("list", home);
       expect(list.stdout).not.toContain("zz-no-manifest-fixture");
 
       // a link installed by hand is simply a name this repository does not own
-      await symlink(fixture, path.join(home, ".claude", "skills", "zz-no-manifest-fixture"));
-      const scan = run("scan", home, "--target", "claude");
+      await symlink(fixture, path.join(home, ".codex", "skills", "zz-no-manifest-fixture"));
+      const scan = run("scan", home, "--target", "codex");
       expect(scan.stdout).toContain("zz-no-manifest-fixture");
       expect(scan.stdout).toContain("EXTERNAL");
-      expect(run("doctor", home, "--target", "claude").exitCode).toBe(0);
+      expect(run("doctor", home, "--target", "codex").exitCode).toBe(0);
 
       // apply leaves it alone
-      expect(run("apply", home, "--target", "claude").exitCode).toBe(0);
-      expect(await lstat(path.join(home, ".claude", "skills", "zz-no-manifest-fixture")).catch(() => undefined)).toBeDefined();
+      expect(run("apply", home, "--target", "codex").exitCode).toBe(0);
+      expect(await lstat(path.join(home, ".codex", "skills", "zz-no-manifest-fixture")).catch(() => undefined)).toBeDefined();
     } finally {
       await rm(fixture, { recursive: true, force: true });
     }
@@ -292,7 +255,7 @@ describe("agent-skills CLI", () => {
     expect(plan.stdout).toContain("LINK");
     expect(plan.stdout).toContain("tmux");
     expect(plan.stdout).toContain("to link");
-    expect(await lstat(path.join(home, ".claude", "skills", "tmux")).catch(() => undefined)).toBeUndefined();
+    expect(await lstat(path.join(home, ".codex", "skills", "tmux")).catch(() => undefined)).toBeUndefined();
 
     expect(run("apply", home).exitCode).toBe(0);
     const settled = run("plan", home);
@@ -304,7 +267,7 @@ describe("agent-skills CLI", () => {
     const home = await createHome();
     expect(run("apply", home).exitCode).toBe(0);
 
-    const skills = path.join(home, ".claude", "skills");
+    const skills = path.join(home, ".codex", "skills");
     await unlink(path.join(skills, "tmux"));
     await mkdir(path.join(skills, "tmux"));
 
@@ -314,108 +277,18 @@ describe("agent-skills CLI", () => {
     expect(plan.stdout).toContain("tmux");
   });
 
-  test("leaves plugin-served skills to the plugin in the claude target", async () => {
+  test("rejects the removed claude target", async () => {
     const home = await createHome();
-    await installFakePlugin(home, ["tmux"]);
-
-    expect(run("apply", home).exitCode).toBe(0);
-    const claudeSkills = path.join(home, ".claude", "skills");
-    expect(await lstat(path.join(claudeSkills, "tmux")).catch(() => undefined)).toBeUndefined();
-    expect(await realpath(path.join(claudeSkills, "yt-digest"))).toBe(
-      await realpath(path.join(root, "skills", "yt-digest")),
-    );
-    // other targets know nothing about the plugin
-    expect(await realpath(path.join(home, ".codex", "skills", "tmux"))).toBe(
-      await realpath(path.join(root, "skills", "tmux")),
-    );
-
-    const doctor = run("doctor", home);
-    expect(doctor.exitCode).toBe(0);
-    expect(doctor.stdout).toContain("HEALTHY");
-    expect(doctor.stdout).toContain("test-version serves 1 skill(s)");
-
-    const claudeScan = run("scan", home, "-t", "claude");
-    expect(claudeScan.stdout).toContain("PLUGIN");
-
-    const plan = run("plan", home);
-    expect(plan.stdout).toContain("NO CHANGES");
-    expect(plan.stdout).toContain("1 served by the plugin");
-  });
-
-  test("removes its own link once the plugin serves that skill", async () => {
-    const home = await createHome();
-    expect(run("apply", home).exitCode).toBe(0);
-    const destination = path.join(home, ".claude", "skills", "tmux");
-    expect(await lstat(destination).catch(() => undefined)).toBeDefined();
-
-    await installFakePlugin(home, ["tmux"]);
-
-    const doctor = run("doctor", home);
-    expect(doctor.exitCode).toBe(1);
-    expect(doctor.stdout).toContain("DUPLICATE");
-    expect(doctor.stdout).toContain("tmux");
-
-    const plan = run("plan", home);
-    expect(plan.exitCode).toBe(0);
-    expect(plan.stdout).toContain("UNLINK");
-    expect(plan.stdout).toContain("1 to unlink");
-
-    const apply = run("apply", home);
-    expect(apply.exitCode).toBe(0);
-    expect(apply.stdout).toContain("Unlinked");
-    expect(await lstat(destination).catch(() => undefined)).toBeUndefined();
-    // only the served skill goes; the rest of the claude target stays linked
-    expect(await realpath(path.join(home, ".claude", "skills", "yt-digest"))).toBe(
-      await realpath(path.join(root, "skills", "yt-digest")),
-    );
-    expect(run("doctor", home).exitCode).toBe(0);
-  });
-
-  test("ignores a disabled plugin", async () => {
-    const home = await createHome();
-    await installFakePlugin(home, ["tmux"], { enabled: false });
-
-    expect(run("apply", home).exitCode).toBe(0);
-    expect(await realpath(path.join(home, ".claude", "skills", "tmux"))).toBe(
-      await realpath(path.join(root, "skills", "tmux")),
-    );
-    const doctor = run("doctor", home);
-    expect(doctor.exitCode).toBe(0);
-    expect(doctor.stdout).not.toContain("serves");
-  });
-
-  test("refuses to touch the claude target when plugin state is unknown", async () => {
-    const home = await createHome();
-    await writeFakeClaude(home, "#!/bin/sh\nexit 3\n");
-
-    const plan = run("plan", home);
-    expect(plan.exitCode).toBe(1);
-    expect(plan.stdout).toContain("PLUGIN STATE UNKNOWN");
-    expect(plan.stdout).toContain("BLOCKED");
-
-    const apply = run("apply", home);
-    expect(apply.exitCode).toBe(1);
-    expect(apply.stderr).toContain("no changes were made");
-    expect(await lstat(path.join(home, ".claude")).catch(() => undefined)).toBeUndefined();
-
-    // the other targets stay reachable on their own
-    expect(run("apply", home, "-t", "codex").exitCode).toBe(0);
-  });
-
-  test("treats unparsable plugin output as unknown state", async () => {
-    const home = await createHome();
-    await writeFakeClaude(home, "#!/bin/sh\necho not-json\n");
-
-    const plan = run("plan", home, "-t", "claude");
-    expect(plan.exitCode).toBe(1);
-    expect(plan.stdout).toContain("unparsable");
+    const result = run("apply", home, "--target", "claude");
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("Unknown target: claude");
   });
 
   test("rejects unknown targets", async () => {
     const home = await createHome();
     const result = run("list", home, "--target", "unknown");
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain("expected agents | claude | codex");
+    expect(result.stderr).toContain("expected agents | codex");
   });
 
   test("accepts -t as a short form of --target", async () => {
