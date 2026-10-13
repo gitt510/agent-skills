@@ -84,8 +84,7 @@ gh pr create --title "<title>" --body-file <file>
 ```
 
 Writing the body is owned by the **writing-documents** skill — invoke it and
-follow its PR description reference. This skill carries no skeleton or format
-knowledge of its own.
+follow its rules. This skill carries no skeleton or format knowledge of its own.
 
 Default to a **ready** PR; only pass `--draft` if the user asks for a draft.
 
