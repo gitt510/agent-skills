@@ -83,8 +83,8 @@ git push -u origin $(git branch --show-current)
 gh pr create --title "<title>" --body-file <file>
 ```
 
-Writing the body is owned by the **build-pr-description** skill — invoke it and
-follow its rules and procedure. This skill carries no skeleton or format
+Writing the body is owned by the **writing-documents** skill — invoke it and
+follow its PR description reference. This skill carries no skeleton or format
 knowledge of its own.
 
 Default to a **ready** PR; only pass `--draft` if the user asks for a draft.

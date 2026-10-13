@@ -103,7 +103,7 @@ Give the user the repository URL, the local path, and the current branch
 ## Boundaries
 
 - **No project files.** Directory layout, README, LICENSE, justfile, `.gitignore` —
-  all of it is scaffold-branch work owned by other skills (`build-readme`,
+  all of it is scaffold-branch work owned by other skills (`writing-documents`,
   `build-justfile`) or the user.
 - **No PR.** Opening the first PR belongs to `create-pr`.
 - **No CI / branch protection / repo settings.** Separate concerns, configured

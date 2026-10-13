@@ -1,20 +1,9 @@
----
-name: build-readme
-description: >
-  Write a README from scratch or fully rebuild one. Collects observable facts from the system
-  itself (code, terraform, actual behavior), composes sections from those facts, and writes
-  one fact per bullet; decision rationale and internal how-it-works are left out. An existing
-  README is broken down sentence by sentence and only facts verifiable against the
-  implementation survive. Use when creating, rewriting, condensing, or restructuring a README.
-  Not for a few added lines to an existing README — a normal edit covers that.
----
-
-# build-readme
+# README
 
 README を「system が何であるか」の観測可能な事実の集合として書く。
 決定の物語・レビューへの弁明・実装の how は README の管轄外（PR / ADR / code の管轄）。
 
-**形式の規律は `writing-documents` に委譲する。** この skill が持つのは README 固有の
+**形式の規律は `SKILL.md` に従う。** この reference が持つのは README 固有の
 allowlist・section composition・fact の収集経路・README 固有のチェックだけ。
 
 ## ルール
@@ -99,7 +88,7 @@ allowlist は「その fact を書いてよいか」、section は「読者が�
 
 ## 手順
 
-1. `writing-documents` を invoke し、共通の判定方法・形式・書き換え技法を読み込む
+1. `SKILL.md` の共通の判定方法・形式・書き換え技法を適用する
 2. 対象 README の状態に応じて fact の候補を収集する
    - README がない場合: 実装（code・terraform・justfile 等）から収集する
    - README がある場合: 現 README を**文単位**で allowlist に照合する。既存 section や構成は
@@ -116,7 +105,7 @@ allowlist は「その fact を書いてよいか」、section は「読者が�
 
 ## 完了チェック
 
-`writing-documents` の共通チェックに、以下を足して検査する。
+`SKILL.md` の共通チェックに、以下を足して検査する。
 
 - [ ] 内容がない section や、固定骨子を埋めるためだけの section がない
 - [ ] 各 header が配下の fact に対する読者の関心を具体的に表している
