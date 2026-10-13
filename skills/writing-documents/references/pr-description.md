@@ -1,16 +1,4 @@
----
-name: build-pr-description
-description: >
-  Write a PR description from scratch or fully rebuild an existing one. Why is written as an
-  argument — the claims that make the change necessary, each backed by verifiable facts — and
-  What / Test / Notes carry only the facts a reviewer needs to read the diff. Claims and facts
-  are gathered from the diff, commits, and conversation; an existing body is broken down
-  sentence by sentence and only what survives verification is kept. Use when creating or
-  rewriting a PR body, including when running gh pr create or gh pr edit. Not for a few added
-  lines to an existing description — a normal edit covers that.
----
-
-# build-pr-description
+# PR description
 
 PR description は reviewer が diff を読むための文書。**Why は論証、What / Test は fact の集合**
 として書く。Why = 変更を必要とする主張（判断）+ それを支える検証可能な根拠。
@@ -18,9 +6,9 @@ PR description は reviewer が diff を読むための文書。**Why は論証�
 （Google の CL description ガイド・Kubernetes template などが収束する Why → What → Test）に従う。
 how の解説は diff 自身が語るので書かない。
 
-**形式の規律は `writing-documents` に委譲する。** この skill が持つのは PR 固有の
+**形式の規律は `SKILL.md` に従う。** この reference が持つのは PR 固有の
 allowlist・骨子・fact の収集経路・PR 固有のチェックだけ。
-create-pr（PR 作成 flow）は body の作成をこの skill に委譲する。
+create-pr（PR 作成 flow）は body の作成をこの reference に委譲する。
 
 ## ルール
 
@@ -103,7 +91,7 @@ What / Test は例外なし。
 
 ## 手順 — 主張と fact の収集・適用
 
-1. `writing-documents` を invoke し、共通の判定方法・形式・書き換え技法を読み込む
+1. `SKILL.md` の共通の判定方法・形式・書き換え技法を適用する
 2. 既存 body がある場合は `gh pr view --json body` で取得し、**文単位**で allowlist に照合する。
    section や構成は継承せず、生き残る文だけを候補にする
 3. **What** — diff（`git diff` / `gh pr diff`）から観測できる変更と、変更後の対外契約を拾う。
@@ -123,7 +111,7 @@ What / Test は例外なし。
 
 ## 完了チェック
 
-`writing-documents` の共通チェックに、以下を足して検査する。
+`SKILL.md` の共通チェックに、以下を足して検査する。
 
 - [ ] Why の各 top-level bullet が主張（判断の叙述文）である — 事実の陳列になっていない
 - [ ] 全主張が「偽なら PR が不要になる」を満たす
