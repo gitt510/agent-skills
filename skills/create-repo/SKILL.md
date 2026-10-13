@@ -93,7 +93,7 @@ git switch -c scaffold
 ```
 
 The branch name is fixed: `scaffold`, always. Local only — it gets pushed
-when the first real work goes up (typically via `publish-pr`).
+when the first real work goes up (typically via `create-pr`).
 
 ### 6) Report
 
@@ -105,7 +105,7 @@ Give the user the repository URL, the local path, and the current branch
 - **No project files.** Directory layout, README, LICENSE, justfile, `.gitignore` —
   all of it is scaffold-branch work owned by other skills (`build-readme`,
   `build-justfile`) or the user.
-- **No PR.** Opening the first PR belongs to `publish-pr`.
+- **No PR.** Opening the first PR belongs to `create-pr`.
 - **No CI / branch protection / repo settings.** Separate concerns, configured
   once there is something to protect.
 - **Never proceed past step 1 without explicit confirmation** of owner, name,

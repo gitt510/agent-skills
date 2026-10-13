@@ -1,15 +1,15 @@
 ---
-name: publish-pr
+name: create-pr
 description: >
-  Publish the current local changes to GitHub in one shot — confirm scope, commit, push, and
-  open a ready pull request. Use whenever the user wants to ship finished local work to a PR
+  Turn the current local changes into an open pull request in one shot — confirm scope,
+  commit, push, and create a ready pull request. Use whenever the user wants to ship finished local work to a PR
   ("open a PR for this", "publish this", "commit, push, and PR", "ship it"), even when the ask
   is terse, as long as there are local changes meant to go up. This is git + PR mechanics
   only: it does NOT merge (stop at opening the PR) and does NOT run tests/build/lint
   (correctness is a separate concern — see the boundary notes below).
 ---
 
-# Publish PR
+# Create PR
 
 Take whatever is in the working tree right now and turn it into an open pull
 request: figure out what should go in, commit it, push the branch, and open the
