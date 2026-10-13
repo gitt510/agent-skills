@@ -20,7 +20,7 @@ how の解説は diff 自身が語るので書かない。
 
 **形式の規律は `writing-documents` に委譲する。** この skill が持つのは PR 固有の
 allowlist・骨子・fact の収集経路・PR 固有のチェックだけ。
-publish-pr（PR 作成 flow）は body の作成をこの skill に委譲する。
+create-pr（PR 作成 flow）は body の作成をこの skill に委譲する。
 
 ## ルール
 
