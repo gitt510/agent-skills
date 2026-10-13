@@ -1,10 +1,6 @@
 ---
 name: yt-digest
-description: >
-  Summarize a YouTube video from its transcript (subtitles) fetched with yt-dlp, without
-  watching it; never downloads the video or audio. Use when a YouTube URL (youtube.com /
-  youtu.be) is shared and the user wants the content, key points, or a transcript — including
-  vague asks like "what's this about?" as long as the target is a YouTube video.
+description: Summarize a YouTube video from its transcript without downloading the video. Use when a YouTube URL is shared and the user wants its content.
 ---
 
 # YT Digest

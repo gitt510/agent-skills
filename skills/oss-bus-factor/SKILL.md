@@ -1,12 +1,6 @@
 ---
 name: oss-bus-factor
-description: >
-  Estimate an open-source project's bus factor from public GitHub data alone, across three
-  axes (org metadata, commit cadence, PR-merger distribution), and produce a governance /
-  activity note for adoption decisions or PR comments. Use when assessing a project's
-  continuity, maintenance health, or whether it is effectively dead, or comparing several
-  projects on governance or maintainership. Triggers on "bus factor", "maintenance health",
-  "is this OSS dead".
+description: Estimate an open-source project's bus factor and maintenance health from public GitHub data. Use when judging whether a project is maintained or comparing projects' maintainership.
 ---
 
 # OSS Bus Factor

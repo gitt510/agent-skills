@@ -1,10 +1,6 @@
 ---
 name: mouse-doctor
-description: >
-  Diagnose and recover mouse clicks that suddenly stop working across macOS apps in setups
-  using LinearMouse or Karabiner-Elements. Inspect system load and the relevant input processes
-  before restarting anything, then restore them in priority order. Use when clicks stop
-  responding app-wide and at least one of those tools is installed.
+description: Diagnose and recover macOS mouse clicks that stop working with LinearMouse or Karabiner-Elements installed. Use when clicks stop responding across apps.
 ---
 
 # Mouse Doctor

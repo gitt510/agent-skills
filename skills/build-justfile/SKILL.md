@@ -1,11 +1,6 @@
 ---
 name: build-justfile
-description: >
-  Create or fully restructure a justfile so its recipes follow the de-facto
-  conventions of prominent open-source justfiles. Use when writing a new
-  justfile, cleaning up or normalizing an existing one, or porting a Makefile
-  to just. Not for adding a recipe or two to an existing justfile — a normal
-  edit covers that.
+description: Create or restructure a justfile following the conventions of prominent open-source justfiles. Use when writing a new justfile, normalizing an existing one, or porting a Makefile to just.
 ---
 
 # build-justfile
