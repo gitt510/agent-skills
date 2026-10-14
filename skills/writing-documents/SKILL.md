@@ -14,3 +14,4 @@ Write the document under the following rules.
 3. Write one sentence per bullet.
 4. Give every bullet a subject.
 5. Fill each table cell with a word or phrase, never a sentence.
+6. End no bullet with a full stop, such as a period or 「。」.
