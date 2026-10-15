@@ -15,3 +15,4 @@ Write the document under the following rules.
 4. Give every bullet a subject.
 5. Fill each table cell with a word or phrase, never a sentence.
 6. End no bullet with a full stop, such as a period or 「。」.
+7. Describe each subject as a black box: state only what it takes, does, needs, guarantees, and returns or fails with, never how it works inside or how to meet its needs.
