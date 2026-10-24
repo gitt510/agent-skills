@@ -87,12 +87,12 @@ describe("agent-skills CLI", () => {
     const skills = path.join(home, ".codex", "skills");
     await unlink(path.join(skills, "tmux"));
     await mkdir(path.join(skills, "tmux"));
-    await unlink(path.join(skills, "yt-digest"));
+    await unlink(path.join(skills, "writing-documents"));
 
     const result = run("apply", home);
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("no changes were made");
-    expect(await lstat(path.join(skills, "yt-digest")).catch(() => undefined)).toBeUndefined();
+    expect(await lstat(path.join(skills, "writing-documents")).catch(() => undefined)).toBeUndefined();
   });
 
   test("relinks a symlink that points somewhere else", async () => {
