@@ -22,7 +22,6 @@ Some skills have additional runtime requirements:
 - `dads`: authenticated `gh` and network access for fetching component sources and refreshing pinned files
 - `mouse-doctor`: LinearMouse or Karabiner-Elements
 - `tmux`: `tmux` and an existing tmux session
-- `yt-digest`: Python 3, `uvx`, Node.js, and network access
 
 ## Quickstart
 
