@@ -2,11 +2,7 @@
   "name": "agent-skills",
   "private": true,
   "type": "module",
-  "bin": {
-    "agent-skills": "./src/cli.ts"
-  },
   "scripts": {
-    "agent-skills": "bun src/cli.ts",
     "lint": "eslint .",
     "test": "bun test"
   },
